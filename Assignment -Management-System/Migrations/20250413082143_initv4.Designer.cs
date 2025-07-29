@@ -4,6 +4,7 @@ using Assignment__Management_System.Models.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Assignment__Management_System.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250413082143_initv4")]
+    partial class initv4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -97,6 +100,8 @@ namespace Assignment__Management_System.Migrations
 
                             t.HasCheckConstraint("CK_Users_Name_Length", "LEN(Name) >= 3");
 
+                            t.HasCheckConstraint("CK_Users_PhoneNumber_Format", "PhoneNumber NOT LIKE '%[^0-9]%'");
+
                             t.HasCheckConstraint("CK_Users_UserName_Format", "LEN(UserName) >= 3");
                         });
                 });
@@ -135,9 +140,8 @@ namespace Assignment__Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CrsId"));
 
-                    b.Property<string>("CrsName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("CrsName")
+                        .HasColumnType("int");
 
                     b.Property<string>("InstId")
                         .IsRequired()

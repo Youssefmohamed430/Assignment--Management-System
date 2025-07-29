@@ -1,10 +1,11 @@
-﻿using Assignment__Management_System.Models;
+﻿using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Models;
 
 namespace Assignment__Management_System.Services
 {
     public interface IAuthService
     {
-        Task<AuthModel> RegisterAsync(RegisterModel model);
+        Task<AuthModel> AddUserAsync(UserDto model);
         Task<AuthModel> LoginAsync(TokenRequestModel model);
     }
 }

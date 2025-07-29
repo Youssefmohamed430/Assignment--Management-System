@@ -2,6 +2,7 @@
 using Assignment__Management_System.Helpers;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
+using Assignment__Management_System.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,11 @@ namespace Assignment__Management_System
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT:Key"]))
                 };
             });
+
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IAdminService, AdminServices>();
+
+            builder.Services.AddScoped<JWTService>();
 
             var app = builder.Build();
 

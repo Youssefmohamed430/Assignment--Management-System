@@ -18,10 +18,6 @@ namespace Assignment__Management_System.Models.Data.Config
                    .HasMaxLength(255)
                    .IsRequired();
 
-            builder.Property(a => a.PhoneNumber)
-                   .HasMaxLength(255)
-                   .IsRequired();
-
             builder.Property(a => a.UserName)
                    .HasMaxLength(255)
                    .IsRequired();
@@ -34,7 +30,6 @@ namespace Assignment__Management_System.Models.Data.Config
             {
                 t.HasCheckConstraint("CK_Users_Name_Length", "LEN(Name) >= 3");
                 t.HasCheckConstraint("CK_Users_Email_Format", "Email LIKE '%@%'");
-                t.HasCheckConstraint("CK_Users_PhoneNumber_Format", "PhoneNumber NOT LIKE '%[^0-9]%'");
                 t.HasCheckConstraint("CK_Users_UserName_Format", "LEN(UserName) >= 3");
             });
         }
