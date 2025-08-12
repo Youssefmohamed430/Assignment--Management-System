@@ -15,15 +15,6 @@ namespace Assignment__Management_System.Controllers
             this.Iadminservice = _Iadminservice;
         }
 
-        [HttpPost("Addcourse")]
-        public IActionResult AddNewCourse(CourseDto model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = Iadminservice.AddCourses(model);
-
-            return result == "" ? Ok() : BadRequest(result); 
-        }
+        
     }
 }

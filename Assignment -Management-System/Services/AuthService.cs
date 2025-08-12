@@ -1,6 +1,8 @@
 ﻿using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Factories;
 using Assignment__Management_System.Helpers;
 using Assignment__Management_System.Models;
+using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +15,12 @@ namespace Assignment__Management_System.Services
     {
         private readonly UserManager<ApplicationUser> userManager ;
         private readonly JWTService _jwtservice ;
-        public AuthService(UserManager<ApplicationUser> _userManager, JWTService jwtservice)
+        private readonly AppDbContext context;
+        public AuthService(AppDbContext _context,UserManager<ApplicationUser> _userManager, JWTService jwtservice)
         {
             this.userManager = _userManager;
             this._jwtservice = jwtservice;
+            this.context = _context;
         }
 
         public async Task<AuthModel> AddUserAsync([FromBody] UserDto model)
@@ -48,21 +52,23 @@ namespace Assignment__Management_System.Services
 
             await userManager.AddToRoleAsync(user, model.Role);
 
-
+            if(model.Role == "Student")
+            {
+                var student = new Student() { Id = user.Id };
+                context.Students.Add(student);
+                context.SaveChanges();
+            }
+            else if(model.Role == "Instructor")
+            {
+                var instructor = new Instructor() { Id = user.Id };
+                context.Instructors.Add(instructor);
+                context.SaveChanges();
+            }
 
             var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
 
-            return new AuthModel()
-            {
-                ID = user.Id,
-                Username = model.UserName,
-                Email = model.Email,
-                IsAuthenticated = true,
-                ExpiresOn = JWTSecurityToken.ValidTo,
-                Roles = new List<string> { model.Role },
-                Token = new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken),
-            };
-
+            return new AuthModelFactory()
+                .CreateAuthModel(user.Id, model.UserName, model.Email, JWTSecurityToken.ValidTo, new List<string> { model.Role }, new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
         public async Task<AuthModel> LoginAsync([FromBody] TokenRequestModel model)
         {
@@ -73,19 +79,10 @@ namespace Assignment__Management_System.Services
             
             var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
 
-            return new AuthModel()
-            {
-                ID = user.Id,
-                Username = user.UserName,
-                Email = user.Email,
-                IsAuthenticated = true,
-                ExpiresOn = JWTSecurityToken.ValidTo,
-                Roles = JWTSecurityToken.Claims
-                    .Where(x => x.Type == "roles")
-                    .Select(x => x.Value)
-                    .ToList(),
-                Token = new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken),
-            };
+            return new AuthModelFactory()
+                .CreateAuthModel(user.Id, user.UserName, user.Email, JWTSecurityToken.ValidTo,
+                JWTSecurityToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value).ToList()
+                , new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
 
     }

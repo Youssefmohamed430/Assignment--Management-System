@@ -1,4 +1,5 @@
-﻿using Assignment__Management_System.Models;
+﻿using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Models;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Azure.Core;
@@ -15,7 +16,7 @@ namespace Assignment__Management_System.Services
         {
             _context = context;
         }
-        public string AddAssignmentToCourse(string userid, Assignment model)
+        public string AddAssignmentToCourse(string userid, AssignmentDTO model)
         {
             string Message = "";
 
@@ -28,7 +29,7 @@ namespace Assignment__Management_System.Services
             {
                 Title = model.Title,
                 DeadLine = model.DeadLine,
-                CrsId = model.Id
+                CrsId = model.CrsId,
             };
 
             _context.Assignments.Add(assignment);
@@ -36,6 +37,7 @@ namespace Assignment__Management_System.Services
             try
             {
                 _context.SaveChanges();
+                Message = "Assignment adding succecfully!";
                 return Message;
             }
             catch (Exception ex)

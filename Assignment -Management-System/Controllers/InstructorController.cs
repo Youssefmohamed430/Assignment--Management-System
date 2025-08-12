@@ -11,16 +11,16 @@ namespace Assignment__Management_System.Controllers
     [ApiController]
     public class InstructorController : Controller
     {
-        private InstructorService _instructorService;
-        public InstructorController(InstructorService instructorService)
+        private IInstructorService _instructorService;
+        public InstructorController(IInstructorService instructorService)
         {
             _instructorService = instructorService;
         }
-
-        public IActionResult AddAssignmentToCourse(Assignment assignment)
+        [HttpPost("AddAssignment")]
+        public IActionResult AddAssignmentToCourse(AssignmentDTO assignment)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(ModelState);  
 
             var userid = User.FindFirstValue("uid");
             

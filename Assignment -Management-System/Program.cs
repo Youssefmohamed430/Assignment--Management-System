@@ -74,6 +74,7 @@ namespace Assignment__Management_System
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAdminService, AdminServices>();
             builder.Services.AddScoped<IInstructorService, InstructorService>();
+            builder.Services.AddScoped<ICourseService, CourseService>();
 
             builder.Services.AddScoped<JWTService>();
 

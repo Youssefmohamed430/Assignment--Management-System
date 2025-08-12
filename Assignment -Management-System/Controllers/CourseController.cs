@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Assignment__Management_System.Controllers
 {
@@ -6,13 +8,34 @@ namespace Assignment__Management_System.Controllers
     [ApiController]
     public class CourseController : Controller
     {
-        public IActionResult Index()
+        private readonly ICourseService courseService;
+
+        public CourseController(ICourseService _courseService)
         {
-            return View();
+            this.courseService = _courseService;
         }
-        public IActionResult GetCourses()
+
+        [HttpPost("Addcourse")]
+        public IActionResult AddNewCourse(CourseDto model)
         {
-            return View();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = courseService.AddCourses(model);
+
+            return result == "" ? Ok() : BadRequest(result);
         }
+
+        [HttpPost("EnrollCourse")]
+        public IActionResult EnrollCourse(CourseEnrollDTO model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = courseService.EnrollCourse(model);
+
+            return result == "" ? Ok() : BadRequest(result);
+        }
+
     }
 }
