@@ -48,10 +48,13 @@ namespace Assignment__Management_System.Services
 
             await userManager.AddToRoleAsync(user, model.Role);
 
+
+
             var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
 
             return new AuthModel()
             {
+                ID = user.Id,
                 Username = model.UserName,
                 Email = model.Email,
                 IsAuthenticated = true,
@@ -63,7 +66,7 @@ namespace Assignment__Management_System.Services
         }
         public async Task<AuthModel> LoginAsync([FromBody] TokenRequestModel model)
         {
-            var user = await userManager.FindByNameAsync(model.Username.ToString());
+            var user = await userManager.FindByNameAsync(model.Username);
 
             if (user == null || !await userManager.CheckPasswordAsync(user,model.password))
                 return new AuthModel() { Message = "User Name or Password is incorrect!"};
@@ -72,6 +75,7 @@ namespace Assignment__Management_System.Services
 
             return new AuthModel()
             {
+                ID = user.Id,
                 Username = user.UserName,
                 Email = user.Email,
                 IsAuthenticated = true,

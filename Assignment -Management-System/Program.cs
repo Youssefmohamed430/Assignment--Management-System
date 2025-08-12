@@ -1,4 +1,4 @@
-
+﻿
 using Assignment__Management_System.Helpers;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
@@ -17,11 +17,7 @@ namespace Assignment__Management_System
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
 
             builder.Services.AddSwaggerGen();
 
@@ -77,6 +73,7 @@ namespace Assignment__Management_System
 
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAdminService, AdminServices>();
+            builder.Services.AddScoped<IInstructorService, InstructorService>();
 
             builder.Services.AddScoped<JWTService>();
 
@@ -85,6 +82,8 @@ namespace Assignment__Management_System
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
+                app.UseDeveloperExceptionPage();
+
                 app.UseSwagger();
 
                 app.UseSwaggerUI();

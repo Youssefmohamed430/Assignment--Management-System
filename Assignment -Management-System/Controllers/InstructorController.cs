@@ -1,0 +1,42 @@
+﻿using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Models.Entities;
+using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace Assignment__Management_System.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class InstructorController : Controller
+    {
+        private InstructorService _instructorService;
+        public InstructorController(InstructorService instructorService)
+        {
+            _instructorService = instructorService;
+        }
+
+        public IActionResult AddAssignmentToCourse(Assignment assignment)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userid = User.FindFirstValue("uid");
+            
+            var result = _instructorService.AddAssignmentToCourse(userid, assignment);
+
+            return result == "" ? Ok() : BadRequest(result);
+        }
+
+        public IActionResult UpdateAssignmentsGrades(List<Submission> submissions)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = _instructorService.UpdateAssignmentsGrades(submissions);
+
+            return result == "" ? Ok() : BadRequest(result);
+        }
+    }
+}

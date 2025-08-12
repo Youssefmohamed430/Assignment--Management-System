@@ -31,6 +31,8 @@ namespace Assignment__Management_System.Services
                     _context.Courses.Add(course);
 
                     _context.SaveChanges();
+
+                    Message = "Course is adding Succefully";
                 }
                 catch (Exception ex)
                 {
@@ -39,7 +41,7 @@ namespace Assignment__Management_System.Services
 
                 return Message;
             }
-            Message = "This Course already exists";
+            Message = "This Course already exist!";
             return Message;
         }
     }
