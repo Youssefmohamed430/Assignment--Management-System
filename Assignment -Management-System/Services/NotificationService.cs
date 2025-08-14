@@ -1,12 +1,25 @@
-﻿using Assignment__Management_System.Models.Entities;
+﻿using Assignment__Management_System.Models.Data;
+using Assignment__Management_System.Models.Entities;
 
 namespace Assignment__Management_System.Services
 {
     public class NotificationService : INotificationService
     {
-        public IQueryable<Notification> GetNotifications()
+        private readonly AppDbContext context;
+
+        public NotificationService(AppDbContext context)
         {
-            throw new NotImplementedException();
+            this.context = context;
+        }
+
+        public IQueryable<Notifications> GetNotifications(string id)
+        {
+           //var notifs = context.UserNotifications
+           //                    .Include(x => x.notification)
+           //                    .Where(x => x.UserId == Id && x.IsRead == false);
+
+           // return notifs;
+           throw new NotImplementedException();
         }
 
         public void MarkasRead()

@@ -1,4 +1,5 @@
-﻿using Assignment__Management_System.Models.Entities;
+﻿using Assignment__Management_System.DataLayer.Entities;
+using Assignment__Management_System.Models.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,8 @@ namespace Assignment__Management_System.Models.Data
         public DbSet<CourseEnrollments> CourseEnrollments { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
         public DbSet<Submission> Submissions { get; set; }
-        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Notifications> Notifications { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }

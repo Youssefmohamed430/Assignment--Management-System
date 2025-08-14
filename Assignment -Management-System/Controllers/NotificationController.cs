@@ -1,5 +1,7 @@
 ﻿using Assignment__Management_System.Models.Entities;
+using Assignment__Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Assignment__Management_System.Controllers
 {
@@ -7,10 +9,21 @@ namespace Assignment__Management_System.Controllers
     [ApiController]
     public class NotificationController : Controller
     {
-        [HttpGet("GetNotifications")]
-        public IQueryable<Notification> GetNotifications()
+        private readonly INotificationService notificationService;
+
+        public NotificationController(INotificationService notificationService)
         {
-            throw new NotImplementedException();
+            this.notificationService = notificationService;
+        }
+
+        [HttpGet("GetNotifications")]
+        public IActionResult GetNotifications()
+        {
+            var userid = User.FindFirstValue("uid");
+
+            var result = notificationService.GetNotifications(userid);
+
+            return result == null ? Ok(result) : BadRequest("No new notifications");
         }
         [HttpPut("MarkasRead")]
         public void MarkasRead()

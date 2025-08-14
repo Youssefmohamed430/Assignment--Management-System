@@ -4,19 +4,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Assignment__Management_System.Models.Data.Config
 {
-    public class NotificationsConfiguration : IEntityTypeConfiguration<Notification>
+    public class NotificationsConfiguration : IEntityTypeConfiguration<Notifications>
     {
-        public void Configure(EntityTypeBuilder<Notification> builder)
+        public void Configure(EntityTypeBuilder<Notifications> builder)
         {
             builder.HasKey(n => n.NotifId);
 
-            builder.Property(n => n.IsRead)
-                .IsRequired(false);
-
-            builder.HasOne(n => n.Reciver)
-                .WithMany(r => r.Notifications)
-                .HasForeignKey(r => r.ReciverId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

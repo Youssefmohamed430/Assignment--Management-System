@@ -5,7 +5,7 @@ namespace Assignment__Management_System.Services
     public interface INotificationService
     {
         void SendNotification();
-        IQueryable<Notification> GetNotifications();
+        IQueryable<Notifications> GetNotifications(string id);
         void MarkasRead();
     }
 }
