@@ -47,15 +47,38 @@ namespace Assignment__Management_System.Services
             Message = "Something went wrong while adding the assignment to the course!";
             return Message;
         }
-        public string UpdateAssignmentsGrades(List<Submission> submissions)
+        public string UpdateAssignmentsGrades(int submissionId,double Grade)
         {
-            foreach (var submission in submissions) 
-                _context.Submissions.Update(submission);
+            try
+            {
+                var sub = _context.Submissions.AsNoTracking()
+                .Include(s => s.assignment)
+                .Include(s => s.student)
+                .ThenInclude(s => s.User)
+                .FirstOrDefault(s => s.SubId == submissionId);
 
-            _context.SaveChanges();
+                sub.grade = Grade;
 
-            return "";
+                _context.Update(sub);
+
+                _context.SaveChanges();
+
+                return "";
+            }
+            catch(Exception ex)
+            {
+                return ex.Message;
+            }
         }
+        public IQueryable<Submission> GetSubmissions(int AssignId)
+        {
+            var subs = _context.Submissions.AsNoTracking()
+                .Include(s => s.assignment)
+                .Include(s => s.student)
+                .ThenInclude(s => s.User)
+                .Where(s => s.AssignmentId == AssignId);
 
+            return subs;
+        }
     }
 }

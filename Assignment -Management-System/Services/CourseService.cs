@@ -14,13 +14,13 @@ namespace Assignment__Management_System.Services
         {
             _context = context;
         }
-        //private IQueryable<Course> GetCourses(string instid)
-        //{
-        //    var course = _context.Courses
-        //                    .Where(c => c.InstId == instid);
+        public IQueryable<Course> GetCourses(string instid)
+        {
+            var course = _context.Courses
+                            .Where(c => c.InstId == instid);
 
-        //    return course;
-        //}
+            return course;
+        }
 
         public string AddCourses(CourseDto model)
         {

@@ -7,6 +7,6 @@ namespace Assignment__Management_System.Services
     {
         string AddCourses(CourseDto model);
         string EnrollCourse(CourseEnrollDTO model);
-        //IQueryable<Course> GetCourses(string instid);
+        IQueryable<Course> GetCourses(string instid);
     }
 }

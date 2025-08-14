@@ -29,12 +29,9 @@ namespace Assignment__Management_System.Controllers
             return result == "" ? Ok() : BadRequest(result);
         }
 
-        public IActionResult UpdateAssignmentsGrades(List<Submission> submissions)
+        public IActionResult UpdateAssignmentsGrades(int Subid , double grade)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = _instructorService.UpdateAssignmentsGrades(submissions);
+            var result = _instructorService.UpdateAssignmentsGrades(Subid,grade);
 
             return result == "" ? Ok() : BadRequest(result);
         }
