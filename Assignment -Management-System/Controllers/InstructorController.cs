@@ -26,14 +26,14 @@ namespace Assignment__Management_System.Controllers
             
             var result = _instructorService.AddAssignmentToCourse(userid, assignment);
 
-            return result == "" ? Ok() : BadRequest(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpPost("UpdateAssignmentsGrades")]
         public IActionResult UpdateAssignmentsGrades(int Subid , double grade)
         {
             var result = _instructorService.UpdateAssignmentsGrades(Subid,grade);
 
-            return result == "" ? Ok() : BadRequest(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }
 }

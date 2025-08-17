@@ -1,4 +1,6 @@
-﻿using Assignment__Management_System.DataLayer.DTOs;
+﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
@@ -16,10 +18,8 @@ namespace Assignment__Management_System.Services
         {
             _context = context;
         }
-        public string AddAssignmentToCourse(string userid, AssignmentDTO model)
+        public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
         {
-            string Message = "";
-
             var Inst = _context.Instructors
                 .Include(i => i.Courses)
                 .Include(i => i.User)
@@ -37,17 +37,17 @@ namespace Assignment__Management_System.Services
             try
             {
                 _context.SaveChanges();
-                Message = "";
-                return Message;
+                
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(true,"Adding Successfully",model);
             }
             catch (Exception ex)
             {
-                Message = ex.Message;
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
-            Message = "Something went wrong while adding the assignment to the course!";
-            return Message;
         }
-        public string UpdateAssignmentsGrades(int submissionId,double Grade)
+        public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId,double Grade)
         {
             try
             {
@@ -60,14 +60,16 @@ namespace Assignment__Management_System.Services
 
                 _context.SaveChanges();
 
-                return "";
+                return new ResponseModelFactory()
+                     .CreateResponseModel<AssignmentDTO>(true,"Updat Grades success", null);
             }
-                catch(Exception ex)
+            catch(Exception ex)
             {
-                return ex.Message;
+                return new ResponseModelFactory()
+                     .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
         }
-        public IQueryable<Submission> GetSubmissions(int AssignId)
+        public ResponseModel<IQueryable<Submission>>  GetSubmissions(int AssignId)
         {
             var subs = _context.Submissions.AsNoTracking()
                 .Include(s => s.assignment)
@@ -75,7 +77,12 @@ namespace Assignment__Management_System.Services
                 .ThenInclude(s => s.User)
                 .Where(s => s.AssignmentId == AssignId);
 
-            return subs;
+            if (subs != null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<Submission>>(true, "", subs);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<Submission>>(false, "No available submissions!", null);
         }
     }
 }

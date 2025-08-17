@@ -1,12 +1,16 @@
-﻿using Assignment__Management_System.DataLayer.DTOs;
+﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Models.Entities;
+using Azure;
 
 namespace Assignment__Management_System.Services
 {
     public interface ICourseService
     {
-        string AddCourses(CourseDto model);
-        string EnrollCourse(CourseEnrollDTO model);
-        IQueryable<Course> GetCourses(string instid);
+        ResponseModel<CourseDto> AddCourses(CourseDto model);
+        ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model);
+        ResponseModel<IQueryable<CourseDto>> GetCourses(string instid);
+        ResponseModel<CourseDto> UpdateCourses(CourseDto model,int crsid);
+        ResponseModel<CourseDto> DeleteCourses(int crsid);
     }
 }

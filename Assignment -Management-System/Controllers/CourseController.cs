@@ -24,7 +24,7 @@ namespace Assignment__Management_System.Controllers
 
             var result = courseService.AddCourses(model);
 
-            return result == "" ? Ok() : BadRequest(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [HttpPost("EnrollCourse")]
@@ -35,17 +35,36 @@ namespace Assignment__Management_System.Controllers
 
             var result = courseService.EnrollCourse(model);
 
-            return result == "" ? Ok() : BadRequest(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
         [HttpGet("GetCourses")]
-        public IActionResult GetCourses()
+        public IActionResult GetCourses() //بتاعت ال Instructor
         {
             var instid = User.FindFirstValue("uid");
 
-            var result = courseService.GetCourses(instid).ToList();
+            var result = courseService.GetCourses(instid);
 
-            return result != null ? Ok(result) : BadRequest("No Available Courses!");
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("Update")]
+        public IActionResult UpdateCourse([FromBody] CourseDto crs, [FromQuery] int id)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = courseService.UpdateCourses(crs, id);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("Delete")]
+        public IActionResult DeleteAssignment([FromQuery] int id)
+        {
+            var result = courseService.DeleteCourses(id);
+
+            return result.IsSuccess == true ? Ok(result) : BadRequest(result);
         }
 
     }
