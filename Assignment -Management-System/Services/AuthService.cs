@@ -84,6 +84,5 @@ namespace Assignment__Management_System.Services
                 JWTSecurityToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value).ToList()
                 , new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
-
     }
 }

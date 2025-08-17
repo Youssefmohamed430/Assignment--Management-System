@@ -37,6 +37,7 @@ namespace Assignment__Management_System.Controllers
 
             return result == "" ? Ok() : BadRequest(result);
         }
+
         [HttpGet("GetCourses")]
         public IActionResult GetCourses()
         {

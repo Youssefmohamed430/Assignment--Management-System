@@ -28,7 +28,7 @@ namespace Assignment__Management_System.Controllers
 
             return result == "" ? Ok() : BadRequest(result);
         }
-
+        [HttpPost("UpdateAssignmentsGrades")]
         public IActionResult UpdateAssignmentsGrades(int Subid , double grade)
         {
             var result = _instructorService.UpdateAssignmentsGrades(Subid,grade);

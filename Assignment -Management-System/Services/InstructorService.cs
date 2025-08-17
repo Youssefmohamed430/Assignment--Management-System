@@ -37,7 +37,7 @@ namespace Assignment__Management_System.Services
             try
             {
                 _context.SaveChanges();
-                Message = "Assignment adding succecfully!";
+                Message = "";
                 return Message;
             }
             catch (Exception ex)
@@ -52,9 +52,6 @@ namespace Assignment__Management_System.Services
             try
             {
                 var sub = _context.Submissions.AsNoTracking()
-                .Include(s => s.assignment)
-                .Include(s => s.student)
-                .ThenInclude(s => s.User)
                 .FirstOrDefault(s => s.SubId == submissionId);
 
                 sub.grade = Grade;
@@ -65,7 +62,7 @@ namespace Assignment__Management_System.Services
 
                 return "";
             }
-            catch(Exception ex)
+                catch(Exception ex)
             {
                 return ex.Message;
             }
