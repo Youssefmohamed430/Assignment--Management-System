@@ -78,6 +78,7 @@ namespace Assignment__Management_System
             builder.Services.AddScoped<IAssignmentService, AssignmentService>();
             builder.Services.AddScoped<IStudentService, StudentService>();
             builder.Services.AddScoped<ISubmissionService, SubmissionService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             builder.Services.AddScoped<JWTService>();
 

@@ -1,6 +1,7 @@
 ﻿using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Security.Claims;
 
 namespace Assignment__Management_System.Controllers
@@ -17,18 +18,18 @@ namespace Assignment__Management_System.Controllers
         }
 
         [HttpGet("GetNotifications")]
-        public IActionResult GetNotifications()
+        public IActionResult GetNotifications(string stuid)
         {
-            var userid = User.FindFirstValue("uid");
+            var result = notificationService.GetNotifications(stuid);
 
-            var result = notificationService.GetNotifications(userid);
-
-            return result == null ? Ok(result) : BadRequest("No new notifications");
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpPut("MarkasRead")]
-        public void MarkasRead()
+        public IActionResult MarkasRead(string stuid,int notifid)
         {
-            throw new NotImplementedException();
+            var result = notificationService.MarkasRead(stuid, notifid);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }
 }

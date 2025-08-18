@@ -13,10 +13,12 @@ namespace Assignment__Management_System.Services
     {
         private readonly AppDbContext _context;
         private readonly TokenRequestModel Request;
+        private readonly INotificationService _notificationService;
 
-        public InstructorService(AppDbContext context)
+        public InstructorService(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
         public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
         {
@@ -38,6 +40,8 @@ namespace Assignment__Management_System.Services
             {
                 _context.SaveChanges();
                 
+                _notificationService.NotifyStudentsOfNewAssignment(assignment);
+
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(true,"Adding Successfully",model);
             }
