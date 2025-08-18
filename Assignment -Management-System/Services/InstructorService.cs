@@ -84,5 +84,26 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<Submission>>(false, "No available submissions!", null);
         }
+
+        public ResponseModel<IQueryable<AssignmentStudentGrades>> GetAssignmentStudentGrades(int assignmentid)
+        {
+            var studgrades = _context.Submissions
+                .AsNoTracking()
+                .Include(s => s.student)
+                .ThenInclude(s => s.User)
+                .Where(s => s.AssignmentId == assignmentid)
+                .Select(s => new AssignmentStudentGrades()
+                {
+                    StudentName = s.student.User.Name,
+                    Grade = s.grade,
+                });
+
+            if (studgrades != null)
+                return new ResponseModelFactory()
+                  .CreateResponseModel<IQueryable<AssignmentStudentGrades>>(true, "", studgrades);
+            else
+                return new ResponseModelFactory()
+                  .CreateResponseModel<IQueryable<AssignmentStudentGrades>>(false, "No Submission available for this assignment!", null);
+        }
     }
 }

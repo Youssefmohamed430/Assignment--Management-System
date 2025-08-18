@@ -9,5 +9,6 @@ namespace Assignment__Management_System.Services
         ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO assignment);
         ResponseModel<IQueryable<Submission>> GetSubmissions(int AssignId);
         ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId, double Grade);
+        ResponseModel<IQueryable<AssignmentStudentGrades>> GetAssignmentStudentGrades(int assignmentid);
     }
 }

@@ -22,7 +22,7 @@ namespace Assignment__Management_System.Controllers
 
             return result != null ? Ok(result) : BadRequest("No Assignments!");
         }
-        [HttpPost("Update")]
+        [HttpPut("Update")]
         public IActionResult UpdateAssignment([FromBody] AssignmentDTO assignment, [FromQuery] int id)
         {
             if (!ModelState.IsValid)
@@ -33,7 +33,7 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpPost("Delete")]
+        [HttpDelete("Delete")]
         public IActionResult DeleteAssignment([FromQuery]int id)
         {
             var result = assignmentService.DeleteAssignment(id);

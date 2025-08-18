@@ -25,14 +25,14 @@ namespace Assignment__Management_System.Controllers
 
             var result = Submissionservice.SubmitAssignment(sub);
 
-            return result == "" ? Ok() : BadRequest(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpGet("GetSubs")]
         public IActionResult GetSubs(int assignid)
         {
             var result = Submissionservice.GetSubs(assignid);
 
-            return result == null ? BadRequest("No Submissions!") : Ok(result);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Assignment__Management_System.DataLayer.DTOs;
+﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -14,7 +16,7 @@ namespace Assignment__Management_System.Services
             this.context = context;
         }
 
-        public IQueryable<CourseEnrollDTO> GetCourseEnrollments(string studentid)
+        public ResponseModel<IQueryable<CourseEnrollDTO>> GetCourseEnrollments(string studentid)
         {
             var CourseEnrolls = context.CourseEnrollments.AsNoTracking()
                 .Include(e => e.course)
@@ -24,10 +26,15 @@ namespace Assignment__Management_System.Services
                     StuId = x.StuId,
                 });
 
-            return CourseEnrolls;
+            if (CourseEnrolls.Any())
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<CourseEnrollDTO>>(true, "", CourseEnrolls);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<CourseEnrollDTO>>(false, "No Available Courses!", null);
         }
 
-        public IQueryable<AssignmentSubsDetails> GetAssignmentDetails(int assignid, string studid)
+        public ResponseModel<IQueryable<AssignmentSubsDetails>> GetAssignmentDetails(int assignid, string studid)
         {
             var Assignsub = context.Submissions.AsNoTracking()
                 .Include(e => e.assignment)
@@ -40,7 +47,12 @@ namespace Assignment__Management_System.Services
                     grade = x.grade
                 });
 
-            return Assignsub;
+            if (Assignsub.Any())
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<AssignmentSubsDetails>>(true, "", Assignsub);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<AssignmentSubsDetails>>(false, "No Available Submissions!", null);
         }
     }
 }

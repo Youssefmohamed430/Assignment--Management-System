@@ -3,6 +3,8 @@ using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using System;
 using System.Security.Claims;
 
 namespace Assignment__Management_System.Controllers
@@ -28,10 +30,17 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpPost("UpdateAssignmentsGrades")]
+        [HttpPut("UpdateAssignmentsGrades")]
         public IActionResult UpdateAssignmentsGrades(int Subid , double grade)
         {
             var result = _instructorService.UpdateAssignmentsGrades(Subid,grade);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+        [HttpGet("GetGrades")]
+        public IActionResult GetAssignmentStudentGrades(int assignmentid)
+        {
+            var result = _instructorService.GetAssignmentStudentGrades(assignmentid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }

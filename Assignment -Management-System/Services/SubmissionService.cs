@@ -1,4 +1,6 @@
-﻿using Assignment__Management_System.DataLayer.DTOs;
+﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +18,7 @@ namespace Assignment__Management_System.Services
             this.context = context;
         }
 
-        public string SubmitAssignment(SubmitDTO Sub)
+        public ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO Sub)
         {
             try
             {
@@ -32,14 +34,16 @@ namespace Assignment__Management_System.Services
 
                 context.SaveChanges();
 
-                return "";
+                return new ResponseModelFactory()
+                    .CreateResponseModel<SubmitDTO>(true,"Submitted Successfully!",Sub);
             }
             catch (Exception ex)
             {
-                return ex.Message;
+                return new ResponseModelFactory()
+                    .CreateResponseModel<SubmitDTO>(false, "Submitted Failed!", null);
             }
         }
-        public IQueryable<SubmitDTO> GetSubs(int assignid)
+        public ResponseModel<IQueryable<SubmitDTO>> GetSubs(int assignid)
         {
             var subs = context.Submissions.AsNoTracking()
                 .Include(s => s.student)
@@ -51,7 +55,12 @@ namespace Assignment__Management_System.Services
                     FileName = Path.GetFileName(x.FilePath),
                 });
 
-            return subs;
+            if (subs.Any())
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<SubmitDTO>>(true, "", subs);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<SubmitDTO>>(false, "No Submits!", null);
         }
     }
 }

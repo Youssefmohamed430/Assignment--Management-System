@@ -19,14 +19,14 @@ namespace Assignment__Management_System.Controllers
         {
             var result = studentService.GetAssignmentDetails(assignid, studid);
 
-            return result != null ? Ok(result) : BadRequest("This Assignment not submitted!"); 
+            return result.IsSuccess ? Ok(result) : BadRequest(result); 
         }
         [HttpGet("GetCourseEnrollments")]
         public IActionResult GetCourseEnrollments(string studentid)
         {
             var result = studentService.GetCourseEnrollments(studentid);
 
-            return result != null ? Ok(result) : NotFound();
+            return result.IsSuccess ? Ok(result) : NotFound(result);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Assignment__Management_System.Controllers
 
             var result = courseService.AddCourses(model);
 
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
+            return result.IsSuccess ? Created() : BadRequest(result);
         }
 
         [HttpPost("EnrollCourse")]
@@ -48,7 +48,7 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpPost("Update")]
+        [HttpPut("Update")]
         public IActionResult UpdateCourse([FromBody] CourseDto crs, [FromQuery] int id)
         {
             if (!ModelState.IsValid)
@@ -59,7 +59,7 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpPost("Delete")]
+        [HttpDelete("Delete")]
         public IActionResult DeleteAssignment([FromQuery] int id)
         {
             var result = courseService.DeleteCourses(id);
