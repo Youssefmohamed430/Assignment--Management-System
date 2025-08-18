@@ -22,6 +22,10 @@ namespace Assignment__Management_System.Services
         {
             try
             {
+                if (context.Submissions.Any(x => x.StuId == Sub.StudId && x.AssignmentId == Sub.AssignmentId))
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<SubmitDTO>(false, "You have already submitted this assignment!", null);
+
                 var submit = new Submission()
                 {
                     FilePath = @"E:\Submissions\" + Sub.FileName,

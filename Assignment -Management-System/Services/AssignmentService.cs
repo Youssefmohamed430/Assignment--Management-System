@@ -54,7 +54,24 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<AssignmentDTO>>(false, "No Assignments For this Course!", null);
         }
+        public ResponseModel<AssignmentDTO> GetAssignmentById(int assignmentid)
+        {
+            var assignment = _context.Assignments.AsNoTracking()
+                .Where(a => a.Id == assignmentid)
+                .Select(x => new AssignmentDTO()
+                {
+                    Title = x.Title,
+                    DeadLine = x.DeadLine,
+                    CrsId = x.CrsId
+                }).FirstOrDefault();
 
+            if (assignment != null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(true, "", assignment);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment Not Found!", null);
+        }
         public ResponseModel<AssignmentDTO> UpdateAssignment(AssignmentDTO assignment,int id)
         {
             try

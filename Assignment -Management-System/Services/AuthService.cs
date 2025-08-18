@@ -16,16 +16,21 @@ namespace Assignment__Management_System.Services
         private readonly UserManager<ApplicationUser> userManager ;
         private readonly JWTService _jwtservice ;
         private readonly AppDbContext context;
-        public AuthService(AppDbContext _context,UserManager<ApplicationUser> _userManager, JWTService jwtservice)
+        private readonly ILogger<AuthService> _logger;
+
+        public AuthService(AppDbContext _context,UserManager<ApplicationUser> _userManager, JWTService jwtservice, ILogger<AuthService> logger)
         {
             this.userManager = _userManager;
             this._jwtservice = jwtservice;
             this.context = _context;
+            _logger = logger;
         }
 
         public async Task<AuthModel> AddUserAsync([FromBody] UserDto model)
         {
-            if(await userManager.FindByNameAsync(model.UserName) is not null) 
+            _logger.LogInformation($"Login attempt for: {model.UserName}");
+
+            if (await userManager.FindByNameAsync(model.UserName) is not null) 
                 return new AuthModel(){ Message = "User Name Is Already Registerd"};
 
             if(await userManager.FindByEmailAsync(model.Email) is not null)
@@ -70,8 +75,10 @@ namespace Assignment__Management_System.Services
             return new AuthModelFactory()
                 .CreateAuthModel(user.Id, model.UserName, model.Email, JWTSecurityToken.ValidTo, new List<string> { model.Role }, new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
-        public async Task<AuthModel> LoginAsync([FromBody] TokenRequestModel model)
+        public async Task<AuthModel> LoginAsync([FromBody] TokenRequestModel model) 
         {
+            _logger.LogInformation($"Login attempt for: {model.Username}");
+
             var user = await userManager.FindByNameAsync(model.Username);
 
             if (user == null || !await userManager.CheckPasswordAsync(user,model.password))

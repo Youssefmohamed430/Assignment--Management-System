@@ -66,17 +66,26 @@ namespace Assignment__Management_System.Services
         {
             var notif = context.Notifications
                 .FirstOrDefault(n => n.ReciverId == userId && n.NotifId == notifid);
-                
 
+            if (notif == null)
+            {
+                return new ResponseModelFactory()
+                    .CreateResponseModel<NotificationDTO>(false, "Notification not found", null);
+            }
             notif.IsRead = true;
             context.Notifications.Update(notif);
             context.SaveChanges();
 
-            if (notif != null)
-                 return new ResponseModelFactory()
-                      .CreateResponseModel<NotificationDTO>(true, "", null);
+            var notificationDto = new NotificationDTO
+            {
+                Message = notif.Message,
+                IsRead = notif.IsRead,
+                SendDate = notif.SendDate.ToString("dd/MM/yyyy HH:mm"),
+                ReciverId = notif.ReciverId
+            };
 
-            return null;
+            return new ResponseModelFactory()
+                .CreateResponseModel<NotificationDTO>(true, "Notification marked as read", notificationDto);
         }
     }
 }

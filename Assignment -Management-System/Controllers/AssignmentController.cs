@@ -40,5 +40,13 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+
+        [HttpGet("GetAssignmentById")]
+        public IActionResult GetAssignmentById([FromQuery] int id)
+        {
+            var result = assignmentService.GetAssignmentById(id);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
     }
 }
