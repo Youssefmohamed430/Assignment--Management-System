@@ -18,7 +18,7 @@ namespace Assignment__Management_System.Controllers
         {
             _instructorService = instructorService;
         }
-        [HttpPost("AddAssignment")]
+        [HttpPost]
         public IActionResult AddAssignmentToCourse(AssignmentDTO assignment)
         {
             if (!ModelState.IsValid)
@@ -30,14 +30,14 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpPut("UpdateAssignmentsGrades")]
-        public IActionResult UpdateAssignmentsGrades(int Subid , double grade)
+        [HttpPut]
+        public IActionResult UpdateAssignmentsGrades([FromQuery]int Subid ,[FromQuery] double grade)
         {
             var result = _instructorService.UpdateAssignmentsGrades(Subid,grade);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpGet("GetGrades")]
+        [HttpGet("{id}")]
         public IActionResult GetAssignmentStudentGrades(int assignmentid)
         {
             var result = _instructorService.GetAssignmentStudentGrades(assignmentid);

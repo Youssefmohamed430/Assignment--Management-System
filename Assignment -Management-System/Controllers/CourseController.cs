@@ -16,7 +16,7 @@ namespace Assignment__Management_System.Controllers
             this.courseService = _courseService;
         }
 
-        [HttpPost("Addcourse")]
+        [HttpPost]
         public IActionResult AddNewCourse(CourseDto model)
         {
             if (!ModelState.IsValid)
@@ -38,7 +38,7 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpGet("GetCourses")]
+        [HttpGet]
         public IActionResult GetCourses() //بتاعت ال Instructor
         {
             var instid = User.FindFirstValue("uid");
@@ -48,8 +48,8 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpPut("Update")]
-        public IActionResult UpdateCourse([FromBody] CourseDto crs, [FromQuery] int id)
+        [HttpPut("{id}")]
+        public IActionResult UpdateCourse([FromBody] CourseDto crs,int id)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -59,8 +59,8 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpDelete("Delete")]
-        public IActionResult DeleteAssignment([FromQuery] int id)
+        [HttpDelete("{id}")]
+        public IActionResult DeleteAssignment(int id)
         {
             var result = courseService.DeleteCourses(id);
 

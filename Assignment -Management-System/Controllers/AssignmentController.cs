@@ -15,15 +15,15 @@ namespace Assignment__Management_System.Controllers
         {
             this.assignmentService = assignmentService;
         }
-        [HttpGet("GetAssignments")]
+        [HttpGet("{crsid}")]
         public IActionResult GetAssignments(int crsid)
         {
             var result = assignmentService.GetAssignments(crsid);
 
             return result != null ? Ok(result) : BadRequest("No Assignments!");
         }
-        [HttpPut("Update")]
-        public IActionResult UpdateAssignment([FromBody] AssignmentDTO assignment, [FromQuery] int id)
+        [HttpPut("{id}")]
+        public IActionResult UpdateAssignment([FromBody] AssignmentDTO assignment,int id)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -33,16 +33,16 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpDelete("Delete")]
-        public IActionResult DeleteAssignment([FromQuery]int id)
+        [HttpDelete("{id}")]
+        public IActionResult DeleteAssignment(int id)
         {
             var result = assignmentService.DeleteAssignment(id);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpGet("GetAssignmentById")]
-        public IActionResult GetAssignmentById([FromQuery] int id)
+        [HttpGet("ById/{id}")]
+        public IActionResult GetAssignmentById(int id)
         {
             var result = assignmentService.GetAssignmentById(id);
 

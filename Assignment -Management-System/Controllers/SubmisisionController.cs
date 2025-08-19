@@ -17,7 +17,7 @@ namespace Assignment__Management_System.Controllers
             Submissionservice = submissionservice;
         }
 
-        [HttpPost("Submit")]
+        [HttpPost]
         public IActionResult SubmitAssignment(SubmitDTO sub)
         {
             if(!ModelState.IsValid) 
@@ -27,7 +27,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpGet("GetSubs")]
+        [HttpGet("{assignid}")]
         public IActionResult GetSubs(int assignid)
         {
             var result = Submissionservice.GetSubs(assignid);
