@@ -48,6 +48,7 @@ namespace Assignment__Management_System.Services
                 .Where(n => n.ReciverId == stuid)
                 .Select(n => new NotificationDTO
                 {
+                    Id = n.NotifId,
                     Message = n.Message,
                     IsRead = n.IsRead,
                     SendDate = n.SendDate.ToString("dd/MM/yyyy HH:mm"),

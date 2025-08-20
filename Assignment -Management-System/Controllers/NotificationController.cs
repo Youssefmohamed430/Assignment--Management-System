@@ -17,16 +17,20 @@ namespace Assignment__Management_System.Controllers
             this.notificationService = notificationService;
         }
 
-        [HttpGet("GetNotifications")]
-        public IActionResult GetNotifications(string stuid)
+        [HttpGet]
+        public IActionResult GetNotifications()
         {
+            var stuid = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
             var result = notificationService.GetNotifications(stuid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpPut("MarkasRead")]
-        public IActionResult MarkasRead(string stuid,int notifid)
+        [HttpPut("MarkasRead/{notifid}")]
+        public IActionResult MarkasRead(int notifid)
         {
+            var stuid = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
             var result = notificationService.MarkasRead(stuid, notifid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
