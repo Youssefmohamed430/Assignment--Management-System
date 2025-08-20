@@ -10,5 +10,6 @@ namespace Assignment__Management_System.Services
         ResponseModel<IQueryable<Submission>> GetSubmissions(int AssignId);
         ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId, double Grade);
         ResponseModel<IQueryable<AssignmentStudentGrades>> GetAssignmentStudentGrades(int assignmentid);
+        ResponseModel<IQueryable<InstructorDTO>> GetInstructors();
     }
 }

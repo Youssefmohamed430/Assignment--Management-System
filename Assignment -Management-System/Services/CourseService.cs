@@ -21,10 +21,11 @@ namespace Assignment__Management_System.Services
             var course = _context.Courses
                             .Where(c => c.InstId == instid)
                             .Select( x => new CourseDto()
-                                {
-                                    CrsName = x.CrsName,
-                                    InstId = x.InstId,
-                                });
+                            {
+                                Id = x.CrsId,
+                                CrsName = x.CrsName,
+                                InstId = x.InstId,
+                            });
 
             if (course == null)
                 return new ResponseModelFactory()
@@ -65,12 +66,12 @@ namespace Assignment__Management_System.Services
                         .CreateResponseModel<CourseDto>(false, "This Course already exist!", null);
         }
 
-        public ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model)
+        public ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model, string userid)
         {
             var result = _context.Courses.Any(c => c.CrsId == model.CrsId);
             if (result)
             {
-                var course = new CourseEnrollments() { CrsId = model.CrsId, StuId = model.StuId};
+                var course = new CourseEnrollments() { CrsId = model.CrsId, StuId = userid};
                 try
                 {
                     _context.CourseEnrollments.Add(course);

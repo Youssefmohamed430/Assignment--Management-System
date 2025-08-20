@@ -23,7 +23,7 @@ namespace Assignment__Management_System.Services
                 .Where(e => e.StuId == studentid)
                 .Select(x => new CourseEnrollDTO {
                     CrsId = x.CrsId,
-                    StuId = x.StuId,
+                    CrsName = x.course.CrsName
                 });
 
             if (CourseEnrolls.Any())
@@ -44,7 +44,7 @@ namespace Assignment__Management_System.Services
                     Title = x.assignment.Title,
                     DeadLine = x.assignment.DeadLine,
                     FileName = Path.GetFileName(x.FilePath),
-                    grade = x.grade
+                    grade = x.grade ?? 0
                 });
 
             if (Assignsub.Any())

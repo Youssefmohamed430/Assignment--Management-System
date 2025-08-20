@@ -109,5 +109,23 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                   .CreateResponseModel<IQueryable<AssignmentStudentGrades>>(false, "No Submission available for this assignment!", null);
         }
+
+        public ResponseModel<IQueryable<InstructorDTO>> GetInstructors()
+        {
+            var insts = _context.Instructors
+                .AsNoTracking()
+                .Include(i => i.User)
+                .Select(i => new InstructorDTO()
+                {
+                    Name = i.User.Name,
+                });
+
+            if (insts != null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<InstructorDTO>>(true, "", insts);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<IQueryable<InstructorDTO>>(false, "No Instructors available!", null);
+        }
     }
 }

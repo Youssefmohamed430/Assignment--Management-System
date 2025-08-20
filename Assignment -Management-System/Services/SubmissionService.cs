@@ -18,11 +18,11 @@ namespace Assignment__Management_System.Services
             this.context = context;
         }
 
-        public ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO Sub)
+        public ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO Sub,string stuid)
         {
             try
             {
-                if (context.Submissions.Any(x => x.StuId == Sub.StudId && x.AssignmentId == Sub.AssignmentId))
+                if (context.Submissions.Any(x => x.StuId == stuid && x.AssignmentId == Sub.AssignmentId))
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "You have already submitted this assignment!", null);
 
@@ -30,7 +30,7 @@ namespace Assignment__Management_System.Services
                 {
                     FilePath = @"E:\Submissions\" + Sub.FileName,
                     grade = null,
-                    StuId = Sub.StudId,
+                    StuId = stuid,
                     AssignmentId = Sub.AssignmentId,
                 };
 
@@ -51,11 +51,13 @@ namespace Assignment__Management_System.Services
         {
             var subs = context.Submissions.AsNoTracking()
                 .Include(s => s.student)
+                .ThenInclude(s => s.User)
                 .Include(s => s.assignment)
                 .Where(s => s.AssignmentId == assignid)
                 .Select(x => new SubmitDTO {
-                    StudId = x.StuId,
+                    stuname = x.student.User.Name,
                     AssignmentId = x.AssignmentId,
+                    AssignmentTitle = x.assignment.Title,
                     FileName = Path.GetFileName(x.FilePath),
                 });
 

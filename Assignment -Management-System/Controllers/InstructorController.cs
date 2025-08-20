@@ -44,5 +44,12 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+        [HttpGet]
+        public IActionResult GetInstructors()
+        {
+            var result = _instructorService.GetInstructors();
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
     }
 }

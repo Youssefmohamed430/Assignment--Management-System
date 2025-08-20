@@ -42,6 +42,7 @@ namespace Assignment__Management_System.Services
                 .Where(a => a.CrsId == CrsId)
                 .Select(x => new AssignmentDTO()
                 {
+                    AssignmentId = x.Id,
                     Title = x.Title,
                     DeadLine = x.DeadLine,
                     CrsId = CrsId

@@ -33,7 +33,9 @@ namespace Assignment__Management_System.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = courseService.EnrollCourse(model);
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
+            var result = courseService.EnrollCourse(model,userId);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }

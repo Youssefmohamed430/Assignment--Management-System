@@ -3,6 +3,6 @@
     public class CourseEnrollDTO
     {
         public int CrsId { get; set; }
-        public string StuId { get; set; }
+        public string? CrsName { get; set; }
     }
 }

@@ -54,7 +54,7 @@ namespace Assignment__Management_System
                 // إعدادات خاصة بكلمات المرور
                 options.Password.RequireDigit = true;
                 options.Password.RequiredLength = 8;
-                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireUppercase = true;
                 options.Password.RequireLowercase = true;
             })

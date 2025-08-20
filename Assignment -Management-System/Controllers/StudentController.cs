@@ -14,16 +14,20 @@ namespace Assignment__Management_System.Controllers
         {
             this.studentService = studentService;
         }
-        [HttpGet]
-        public IActionResult GetsubmissionDetails([FromQuery]int assignid,[FromQuery]string studid)
+        [HttpGet("SubmitDetails")]
+        public IActionResult GetsubmissionDetails([FromQuery]int assignid)
         {
+            var studid = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
             var result = studentService.GetAssignmentDetails(assignid, studid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result); 
         }
-        [HttpGet("{studentid}")]
-        public IActionResult GetCourseEnrollments([FromRoute] string studentid)
+        [HttpGet]
+        public IActionResult GetCourseEnrollments()
         {
+            var studentid = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
             var result = studentService.GetCourseEnrollments(studentid);
 
             return result.IsSuccess ? Ok(result) : NotFound(result);

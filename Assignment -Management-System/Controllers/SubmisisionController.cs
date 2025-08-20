@@ -23,7 +23,9 @@ namespace Assignment__Management_System.Controllers
             if(!ModelState.IsValid) 
                 return BadRequest(ModelState);
 
-            var result = Submissionservice.SubmitAssignment(sub);
+            var studentid = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
+
+            var result = Submissionservice.SubmitAssignment(sub,studentid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }

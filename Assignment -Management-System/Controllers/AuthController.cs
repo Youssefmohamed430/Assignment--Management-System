@@ -41,7 +41,7 @@ namespace Assignment__Management_System.Controllers
             if(!result.IsAuthenticated)
                 return BadRequest(result.Message);
 
-            return Created();
+            return Ok(result);
         }
     }
 }

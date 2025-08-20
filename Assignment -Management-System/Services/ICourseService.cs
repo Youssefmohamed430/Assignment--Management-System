@@ -8,7 +8,7 @@ namespace Assignment__Management_System.Services
     public interface ICourseService
     {
         ResponseModel<CourseDto> AddCourses(CourseDto model);
-        ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model);
+        ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model,string userid);
         ResponseModel<IQueryable<CourseDto>> GetCourses(string instid);
         ResponseModel<CourseDto> UpdateCourses(CourseDto model,int crsid);
         ResponseModel<CourseDto> DeleteCourses(int crsid);
