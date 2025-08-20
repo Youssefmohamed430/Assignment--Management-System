@@ -8,5 +8,6 @@ namespace Assignment__Management_System.Services
     {
         ResponseModel<IQueryable<CourseEnrollDTO>> GetCourseEnrollments(string studentid);
         ResponseModel<IQueryable<AssignmentSubsDetails>> GetAssignmentDetails(int assignid, string studid);
+        ResponseModel<UserDto> GetStudentByname(string name);
     }
 }

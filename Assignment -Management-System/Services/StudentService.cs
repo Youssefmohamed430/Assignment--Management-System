@@ -54,5 +54,24 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<AssignmentSubsDetails>>(false, "No Available Submissions!", null);
         }
+        public ResponseModel<UserDto> GetStudentByname(string name)
+        {
+            var student = context.Users
+                .AsNoTracking()
+                .Where(u => u.Name == name)
+                .Select(s => new UserDto()
+                {
+                    UserName = s.UserName,
+                    Name = s.Name,
+                    Email = s.Email,
+                }).FirstOrDefault();
+
+            if (student != null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<UserDto>(true, "", student);
+            else
+                return new ResponseModelFactory()
+                    .CreateResponseModel<UserDto>(false, "User not found!", null);
+        }
     }
 }

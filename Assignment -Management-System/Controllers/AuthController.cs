@@ -17,7 +17,7 @@ namespace Assignment__Management_System.Controllers
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> LoginAsync(TokenRequestModel Tokenmodel)
+        public async Task<IActionResult> LoginAsync([FromBody]TokenRequestModel Tokenmodel)
         {
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);

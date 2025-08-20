@@ -32,5 +32,11 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+        [HttpGet("{name}")]
+        public IActionResult GetStudentByname(string name)
+        {
+            var result = studentService.GetStudentByname(name);
+            return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
     }
 }

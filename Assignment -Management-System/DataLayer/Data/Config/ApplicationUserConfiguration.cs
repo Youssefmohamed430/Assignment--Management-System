@@ -19,6 +19,7 @@ namespace Assignment__Management_System.Models.Data.Config
                    .IsRequired();
 
             builder.Property(a => a.UserName)
+                   .HasColumnType("nvarchar(256)")
                    .HasMaxLength(255)
                    .IsRequired();
 

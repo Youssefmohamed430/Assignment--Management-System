@@ -1,4 +1,5 @@
 ﻿using Assignment__Management_System.DataLayer.DTOs;
+using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.Factories;
 using Assignment__Management_System.Helpers;
 using Assignment__Management_System.Models;
@@ -8,6 +9,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace Assignment__Management_System.Services
 {
@@ -30,11 +33,11 @@ namespace Assignment__Management_System.Services
         {
             _logger.LogInformation($"Login attempt for: {model.UserName}");
 
-            if (await userManager.FindByNameAsync(model.UserName) is not null) 
-                return new AuthModel(){ Message = "User Name Is Already Registerd"};
+            if (await FindByNameAsync(model.UserName) is not null)
+                return new AuthModel() { Message = "User Name Is Already Registerd" };
 
-            if(await userManager.FindByEmailAsync(model.Email) is not null)
-                return new AuthModel(){ Message = "Email Is Already Registerd"};
+            if (await userManager.FindByEmailAsync(model.Email) is not null)
+                return new AuthModel() { Message = "Email Is Already Registerd" };
 
             ApplicationUser user = new ApplicationUser() 
             {
@@ -75,11 +78,11 @@ namespace Assignment__Management_System.Services
             return new AuthModelFactory()
                 .CreateAuthModel(user.Id, model.UserName, model.Email, JWTSecurityToken.ValidTo, new List<string> { model.Role }, new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
-        public async Task<AuthModel> LoginAsync([FromBody] TokenRequestModel model) 
+        public async Task<AuthModel> LoginAsync(TokenRequestModel model) 
         {
             _logger.LogInformation($"Login attempt for: {model.Username}");
 
-            var user = await userManager.FindByNameAsync(model.Username);
+            var user = await FindByNameAsync(model.Username);
 
             if (user == null || !await userManager.CheckPasswordAsync(user,model.password))
                 return new AuthModel() { Message = "User Name or Password is incorrect!"};
@@ -91,5 +94,22 @@ namespace Assignment__Management_System.Services
                 JWTSecurityToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value).ToList()
                 , new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
+
+        public async Task<ApplicationUser> FindByNameAsync(string userName)
+        {
+            var user = await context.Users
+                         .FirstOrDefaultAsync(u => u.UserName == (string)userName);
+
+            return user;
+        }
+
+        public async Task<ApplicationUser> FindByEmailAsync(string email)
+        {
+            var user = await context.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            return user;
+        }
+
     }
 }
