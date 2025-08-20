@@ -56,6 +56,10 @@ namespace Assignment__Management_System.Services
         }
         public ResponseModel<UserDto> GetStudentByname(string name)
         {
+            if(string.IsNullOrWhiteSpace(name))
+                return new ResponseModelFactory()
+                    .CreateResponseModel<UserDto>(false, "Name cannot be empty!", null);
+
             var student = context.Users
                 .AsNoTracking()
                 .Where(u => u.Name == name)
@@ -71,7 +75,7 @@ namespace Assignment__Management_System.Services
                     .CreateResponseModel<UserDto>(true, "", student);
             else
                 return new ResponseModelFactory()
-                    .CreateResponseModel<UserDto>(false, "User not found!", null);
+                    .CreateResponseModel<UserDto>(false, "Student not found!", null);
         }
     }
 }

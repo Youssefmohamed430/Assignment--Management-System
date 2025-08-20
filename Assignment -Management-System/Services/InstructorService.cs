@@ -22,6 +22,14 @@ namespace Assignment__Management_System.Services
         }
         public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
         {
+            if(model.DeadLine < DateOnly.FromDateTime(DateTime.Now))
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Deadline cannot be in the past!", null);
+
+            if (!_context.Courses.Any(c => c.CrsId == model.CrsId))
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<AssignmentDTO>(false, "Course Not Found!", null);
+
             var Inst = _context.Instructors
                 .Include(i => i.Courses)
                 .Include(i => i.User)
@@ -53,6 +61,14 @@ namespace Assignment__Management_System.Services
         }
         public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId,double Grade)
         {
+            if(Grade < 0 || Grade > 10)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Grade must be between 0 and 10!", null);
+
+            if(!_context.Submissions.Any(s => s.SubId == submissionId))
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Submission Not Found!", null);
+
             try
             {
                 var sub = _context.Submissions.AsNoTracking()
@@ -88,7 +104,6 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<Submission>>(false, "No available submissions!", null);
         }
-
         public ResponseModel<IQueryable<AssignmentStudentGrades>> GetAssignmentStudentGrades(int assignmentid)
         {
             var studgrades = _context.Submissions
@@ -109,7 +124,6 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                   .CreateResponseModel<IQueryable<AssignmentStudentGrades>>(false, "No Submission available for this assignment!", null);
         }
-
         public ResponseModel<IQueryable<InstructorDTO>> GetInstructors()
         {
             var insts = _context.Instructors

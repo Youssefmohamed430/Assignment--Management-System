@@ -33,7 +33,7 @@ namespace Assignment__Management_System.Services
         {
             _logger.LogInformation($"Login attempt for: {model.UserName}");
 
-            if (await FindByNameAsync(model.UserName) is not null)
+            if (await userManager.FindByNameAsync(model.UserName) is not null)
                 return new AuthModel() { Message = "User Name Is Already Registerd" };
 
             if (await userManager.FindByEmailAsync(model.Email) is not null)
@@ -82,7 +82,7 @@ namespace Assignment__Management_System.Services
         {
             _logger.LogInformation($"Login attempt for: {model.Username}");
 
-            var user = await FindByNameAsync(model.Username);
+            var user = await userManager.FindByNameAsync(model.Username);
 
             if (user == null || !await userManager.CheckPasswordAsync(user,model.password))
                 return new AuthModel() { Message = "User Name or Password is incorrect!"};
@@ -94,22 +94,5 @@ namespace Assignment__Management_System.Services
                 JWTSecurityToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value).ToList()
                 , new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
-
-        public async Task<ApplicationUser> FindByNameAsync(string userName)
-        {
-            var user = await context.Users
-                         .FirstOrDefaultAsync(u => u.UserName == (string)userName);
-
-            return user;
-        }
-
-        public async Task<ApplicationUser> FindByEmailAsync(string email)
-        {
-            var user = await context.Users
-                .FirstOrDefaultAsync(u => u.Email == email);
-
-            return user;
-        }
-
     }
 }

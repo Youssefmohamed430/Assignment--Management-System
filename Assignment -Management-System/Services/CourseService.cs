@@ -68,7 +68,7 @@ namespace Assignment__Management_System.Services
 
         public ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model, string userid)
         {
-            var result = _context.Courses.Any(c => c.CrsId == model.CrsId);
+            var result = _context.CourseEnrollments.Any(c => c.StuId == userid && c.CrsId == model.CrsId);
             if (result)
             {
                 var course = new CourseEnrollments() { CrsId = model.CrsId, StuId = userid};
@@ -89,7 +89,7 @@ namespace Assignment__Management_System.Services
             }
             else
                 return new ResponseModelFactory()
-                         .CreateResponseModel<CourseEnrollDTO>(false, "Course is not found!", null);
+                         .CreateResponseModel<CourseEnrollDTO>(false, "Course is already enrolled!", null);
         }
 
         public ResponseModel<CourseDto> UpdateCourses(CourseDto model, int crsid)
