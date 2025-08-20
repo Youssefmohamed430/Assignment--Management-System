@@ -16,6 +16,17 @@ namespace Assignment__Management_System.Controllers
             this.courseService = _courseService;
         }
 
+        [HttpGet]
+        public IActionResult GetCourses()
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = courseService.GetCourses();
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost]
         public IActionResult AddNewCourse(CourseDto model)
         {
@@ -40,15 +51,7 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [HttpGet]
-        public IActionResult GetCourses() //بتاعت ال Instructor
-        {
-            var instid = User.FindFirstValue("uid");
-
-            var result = courseService.GetCourses(instid);
-
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+        
 
         [HttpPut("{id}")]
         public IActionResult UpdateCourse([FromBody] CourseDto crs,int id)

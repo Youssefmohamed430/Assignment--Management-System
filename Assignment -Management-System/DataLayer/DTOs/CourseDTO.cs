@@ -9,5 +9,6 @@ namespace Assignment__Management_System.DataLayer.DTOs
         public string CrsName { get; set; }
         [Required]
         public string InstId { get; set; }
+        public string? InstName { get; set; }
     }
 }

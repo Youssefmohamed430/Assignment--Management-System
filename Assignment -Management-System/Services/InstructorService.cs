@@ -118,6 +118,7 @@ namespace Assignment__Management_System.Services
                 .Select(i => new InstructorDTO()
                 {
                     Name = i.User.Name,
+                    id = i.Id
                 });
 
             if (insts != null)
@@ -126,6 +127,28 @@ namespace Assignment__Management_System.Services
             else
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<InstructorDTO>>(false, "No Instructors available!", null);
+        }
+        public ResponseModel<IQueryable<CourseDto>> GetInstructorCourses(string instid)
+        {
+            var course = _context.Courses
+                            .AsNoTracking()
+                            .Include(c => c.instructor)
+                            .ThenInclude(c => c.User)
+                            .Where(c => c.InstId == instid)
+                            .Select(x => new CourseDto()
+                            {
+                                Id = x.CrsId,
+                                CrsName = x.CrsName,
+                                InstId = x.InstId,
+                                InstName = x.instructor.User.Name
+                            });
+
+            if (course == null)
+                return new ResponseModelFactory()
+                 .CreateResponseModel<IQueryable<CourseDto>>(false, "No Available Courses!", null);
+            else
+                return new ResponseModelFactory()
+                 .CreateResponseModel<IQueryable<CourseDto>>(true, "", course);
         }
     }
 }

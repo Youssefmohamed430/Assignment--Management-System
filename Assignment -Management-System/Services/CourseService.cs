@@ -16,15 +16,15 @@ namespace Assignment__Management_System.Services
         {
             _context = context;
         }
-        public ResponseModel<IQueryable<CourseDto>> GetCourses(string instid)
+        public ResponseModel<IQueryable<CourseDto>> GetCourses()
         {
             var course = _context.Courses
-                            .Where(c => c.InstId == instid)
                             .Select( x => new CourseDto()
                             {
-                                Id = x.CrsId,
+                                Id = x.CrsId,   
                                 CrsName = x.CrsName,
                                 InstId = x.InstId,
+                                InstName = x.instructor.User.Name
                             });
 
             if (course == null)

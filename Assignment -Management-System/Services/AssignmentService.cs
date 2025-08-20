@@ -39,13 +39,15 @@ namespace Assignment__Management_System.Services
         public ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId)
         {
             var assignments = _context.Assignments.AsNoTracking()
+                .Include(a => a.course)
                 .Where(a => a.CrsId == CrsId)
                 .Select(x => new AssignmentDTO()
                 {
                     AssignmentId = x.Id,
                     Title = x.Title,
                     DeadLine = x.DeadLine,
-                    CrsId = CrsId
+                    CrsId = CrsId,
+                    CrsName = x.course.CrsName
                 });
 
             if (assignments.Any())
@@ -58,12 +60,14 @@ namespace Assignment__Management_System.Services
         public ResponseModel<AssignmentDTO> GetAssignmentById(int assignmentid)
         {
             var assignment = _context.Assignments.AsNoTracking()
+                .Include(a => a.course)
                 .Where(a => a.Id == assignmentid)
                 .Select(x => new AssignmentDTO()
                 {
                     Title = x.Title,
                     DeadLine = x.DeadLine,
-                    CrsId = x.CrsId
+                    CrsId = x.CrsId,
+                    CrsName = x.course.CrsName,
                 }).FirstOrDefault();
 
             if (assignment != null)

@@ -9,7 +9,7 @@ namespace Assignment__Management_System.Services
     {
         ResponseModel<CourseDto> AddCourses(CourseDto model);
         ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model,string userid);
-        ResponseModel<IQueryable<CourseDto>> GetCourses(string instid);
+        ResponseModel<IQueryable<CourseDto>> GetCourses();
         ResponseModel<CourseDto> UpdateCourses(CourseDto model,int crsid);
         ResponseModel<CourseDto> DeleteCourses(int crsid);
     }

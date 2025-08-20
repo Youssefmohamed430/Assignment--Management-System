@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using System;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 namespace Assignment__Management_System.Controllers
 {
@@ -18,6 +19,17 @@ namespace Assignment__Management_System.Controllers
         {
             _instructorService = instructorService;
         }
+
+        [HttpGet("InstructorCourses")]
+        public IActionResult GetInstructorCourses() 
+        {
+            var instid = User.FindFirstValue("uid");
+
+            var result = _instructorService.GetInstructorCourses(instid);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost]
         public IActionResult AddAssignmentToCourse(AssignmentDTO assignment)
         {
@@ -37,13 +49,13 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpGet("{id}")]
+        [HttpGet("{assignmentid}")]
         public IActionResult GetAssignmentStudentGrades(int assignmentid)
         {
             var result = _instructorService.GetAssignmentStudentGrades(assignmentid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+        }   
         [HttpGet]
         public IActionResult GetInstructors()
         {
