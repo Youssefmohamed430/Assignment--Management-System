@@ -30,16 +30,11 @@ namespace Assignment__Management_System.Services
                     return new ResponseModelFactory()
                         .CreateResponseModel<AssignmentDTO>(false, "Course Not Found!", null);
 
-            var Inst = _context.Instructors
-                .Include(i => i.Courses)
-                .Include(i => i.User)
-                .FirstOrDefault(i => i.Id == userid);
-
             var assignment = new Assignment()
             {
                 Title = model.Title,
                 DeadLine = model.DeadLine,
-                CrsId = model.CrsId,
+                CrsId = Convert.ToInt32(model.CrsId),
             };
 
             _context.Assignments.Add(assignment);
@@ -49,6 +44,12 @@ namespace Assignment__Management_System.Services
                 _context.SaveChanges();
                 
                 _notificationService.NotifyStudentsOfNewAssignment(assignment);
+
+                model.AssignmentId = assignment.Id;
+                model.CrsName = _context.Courses
+                    .Where(c => c.CrsId == model.CrsId)
+                    .Select(c => c.CrsName)
+                    .FirstOrDefault();
 
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(true,"Adding Successfully",model);

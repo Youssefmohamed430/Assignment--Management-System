@@ -26,6 +26,15 @@ namespace Assignment__Management_System.Services
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "You have already submitted this assignment!", null);
 
+                var dateassignment = context.Assignments
+                    .Where(a => a.Id == Sub.AssignmentId)
+                    .Select(a => a.DeadLine)
+                    .FirstOrDefault();
+
+                if(dateassignment < DateOnly.FromDateTime(DateTime.Now))
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<SubmitDTO>(false, "You cannot submit this assignment, deadline has passed!", null);
+
                 var submit = new Submission()
                 {
                     FilePath = @"E:\Submissions\" + Sub.FileName,
@@ -38,8 +47,23 @@ namespace Assignment__Management_System.Services
 
                 context.SaveChanges();
 
+                var submitdto = context.Submissions
+                    .AsNoTracking()
+                    .Include(s => s.student)
+                    .ThenInclude(s => s.User)
+                    .Include(s => s.assignment)
+                    .Where(x => x.SubId == submit.SubId)
+                    .Select(s => new SubmitDTO() 
+                    {
+                        AssignmentId = s.AssignmentId,
+                        AssignmentTitle = s.assignment.Title,
+                        FileName = Path.GetFileName(s.FilePath),
+                        stuname = s.student.User.Name,
+                        grade = Convert.ToInt32(s.grade)
+                    }).FirstOrDefault();
+
                 return new ResponseModelFactory()
-                    .CreateResponseModel<SubmitDTO>(true,"Submitted Successfully!",Sub);
+                    .CreateResponseModel<SubmitDTO>(true,"Submitted Successfully!",submitdto);
             }
             catch (Exception ex)
             {

@@ -7,11 +7,13 @@ using System.Diagnostics;
 using System;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Assignment__Management_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class InstructorController : Controller
     {
         private IInstructorService _instructorService;
@@ -19,7 +21,6 @@ namespace Assignment__Management_System.Controllers
         {
             _instructorService = instructorService;
         }
-
         [HttpGet("InstructorCourses")]
         public IActionResult GetInstructorCourses() 
         {
@@ -29,7 +30,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-
+        [Authorize(Roles = "Instructor")]
         [HttpPost]
         public IActionResult AddAssignmentToCourse(AssignmentDTO assignment)
         {
@@ -42,6 +43,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+        [Authorize(Roles = "Instructor")]
         [HttpPut]
         public IActionResult UpdateAssignmentsGrades([FromQuery]int Subid ,[FromQuery] double grade)
         {
@@ -49,13 +51,15 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+        [Authorize(Roles = "Instructor")]
         [HttpGet("{assignmentid}")]
         public IActionResult GetAssignmentStudentGrades(int assignmentid)
         {
             var result = _instructorService.GetAssignmentStudentGrades(assignmentid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }   
+        }
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult GetInstructors()
         {

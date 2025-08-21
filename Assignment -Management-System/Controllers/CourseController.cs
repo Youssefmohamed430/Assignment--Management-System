@@ -1,5 +1,6 @@
 ﻿using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -7,6 +8,7 @@ namespace Assignment__Management_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CourseController : Controller
     {
         private readonly ICourseService courseService;
@@ -26,7 +28,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public IActionResult AddNewCourse(CourseDto model)
         {
@@ -37,7 +39,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Created() : BadRequest(result);
         }
-
+        [Authorize(Roles = "Student")]
         [HttpPost("EnrollCourse")]
         public IActionResult EnrollCourse(CourseEnrollDTO model)
         {
@@ -51,8 +53,8 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public IActionResult UpdateCourse([FromBody] CourseDto crs,int id)
         {
@@ -63,9 +65,9 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public IActionResult DeleteAssignment(int id)
+        public IActionResult DeleteCourse(int id)
         {
             var result = courseService.DeleteCourses(id);
 

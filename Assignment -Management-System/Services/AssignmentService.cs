@@ -35,7 +35,6 @@ namespace Assignment__Management_System.Services
                     .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
         }
-
         public ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId)
         {
             var assignments = _context.Assignments.AsNoTracking()
@@ -64,6 +63,7 @@ namespace Assignment__Management_System.Services
                 .Where(a => a.Id == assignmentid)
                 .Select(x => new AssignmentDTO()
                 {
+                    AssignmentId = assignmentid,
                     Title = x.Title,
                     DeadLine = x.DeadLine,
                     CrsId = x.CrsId,
@@ -90,8 +90,20 @@ namespace Assignment__Management_System.Services
 
                 _context.SaveChanges();
 
+                var assigndto = _context.Assignments
+                    .Include(a => a.course)
+                    .Where(a => a.Id == id)
+                    .Select(x => new AssignmentDTO()
+                    {
+                        AssignmentId = x.Id,
+                        Title = x.Title,
+                        DeadLine = x.DeadLine,
+                        CrsId = x.CrsId,
+                        CrsName = x.course.CrsName
+                    }).FirstOrDefault();
+
                 return new ResponseModelFactory()
-                    .CreateResponseModel<AssignmentDTO>(true, "Updated Successfully!", assignment);
+                    .CreateResponseModel<AssignmentDTO>(true, "Updated Successfully!", assigndto);
             }
             catch (Exception ex)
             {

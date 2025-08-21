@@ -69,7 +69,7 @@ namespace Assignment__Management_System.Services
         public ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model, string userid)
         {
             var result = _context.CourseEnrollments.Any(c => c.StuId == userid && c.CrsId == model.CrsId);
-            if (result)
+            if (!result)
             {
                 var course = new CourseEnrollments() { CrsId = model.CrsId, StuId = userid};
                 try
@@ -77,6 +77,12 @@ namespace Assignment__Management_System.Services
                     _context.CourseEnrollments.Add(course);
 
                     _context.SaveChanges();
+
+                    model.CrsName = _context.CourseEnrollments?
+                        .Where(c => c.CrsId == model.CrsId)
+                        .Include(c => c.course)
+                        .FirstOrDefault()?
+                        .course?.CrsName;   
 
                     return new ResponseModelFactory()
                          .CreateResponseModel<CourseEnrollDTO>(true,"", model);
@@ -96,7 +102,8 @@ namespace Assignment__Management_System.Services
         {
             try
             {
-                var oldCrs = _context.Courses.FirstOrDefault(a => a.CrsId == crsid);
+                var oldCrs = _context.Courses
+                    .FirstOrDefault(a => a.CrsId == crsid);
 
                 oldCrs.CrsName = model.CrsName;
                 oldCrs.InstId = model.InstId;
@@ -105,8 +112,20 @@ namespace Assignment__Management_System.Services
 
                 _context.SaveChanges();
 
+                var coursedto = _context.Courses
+                    .Include(c => c.instructor)
+                    .ThenInclude(c => c.User)
+                    .Where(c => c.CrsId == crsid)
+                    .Select(c => new CourseDto()
+                    {
+                        Id = c.CrsId,
+                        CrsName = c.CrsName,
+                        InstId = c.InstId,
+                        InstName = c.instructor.User.Name
+                    }).FirstOrDefault();
+
                 return new ResponseModelFactory()
-                    .CreateResponseModel<CourseDto>(true, "Updated Successfully!", model);
+                    .CreateResponseModel<CourseDto>(true, "Updated Successfully!", coursedto);
             }
             catch (Exception ex)
             {
