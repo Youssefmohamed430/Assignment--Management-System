@@ -1,6 +1,7 @@
 ﻿using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -16,7 +17,7 @@ namespace Assignment__Management_System.Controllers
         {
             Submissionservice = submissionservice;
         }
-
+        [Authorize(Roles = "Student")]
         [HttpPost]
         public IActionResult SubmitAssignment(SubmitDTO sub)
         {
@@ -29,6 +30,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+        [Authorize(Roles = "Instructor")]
         [HttpGet("{assignid}")]
         public IActionResult GetSubs(int assignid)
         {

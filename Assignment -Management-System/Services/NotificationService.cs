@@ -45,7 +45,7 @@ namespace Assignment__Management_System.Services
         {
             var notifs = context.Notifications
                 .AsNoTracking()
-                .Where(n => n.ReciverId == stuid)
+                .Where(n => n.ReciverId == stuid && !n.IsRead)
                 .Select(n => new NotificationDTO
                 {
                     Id = n.NotifId,

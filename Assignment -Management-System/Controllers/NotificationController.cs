@@ -1,5 +1,6 @@
 ﻿using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Security.Claims;
@@ -8,6 +9,7 @@ namespace Assignment__Management_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Student")]
     public class NotificationController : Controller
     {
         private readonly INotificationService notificationService;

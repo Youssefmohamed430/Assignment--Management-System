@@ -47,23 +47,8 @@ namespace Assignment__Management_System.Services
 
                 context.SaveChanges();
 
-                var submitdto = context.Submissions
-                    .AsNoTracking()
-                    .Include(s => s.student)
-                    .ThenInclude(s => s.User)
-                    .Include(s => s.assignment)
-                    .Where(x => x.SubId == submit.SubId)
-                    .Select(s => new SubmitDTO() 
-                    {
-                        AssignmentId = s.AssignmentId,
-                        AssignmentTitle = s.assignment.Title,
-                        FileName = Path.GetFileName(s.FilePath),
-                        stuname = s.student.User.Name,
-                        grade = Convert.ToInt32(s.grade)
-                    }).FirstOrDefault();
-
                 return new ResponseModelFactory()
-                    .CreateResponseModel<SubmitDTO>(true,"Submitted Successfully!",submitdto);
+                    .CreateResponseModel<SubmitDTO>(true,"Submitted Successfully!",null);
             }
             catch (Exception ex)
             {

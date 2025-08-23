@@ -1,6 +1,7 @@
 ﻿using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Models;
 using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,7 @@ namespace Assignment__Management_System.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -29,7 +31,7 @@ namespace Assignment__Management_System.Controllers
 
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPost("AddUser")]
         public async Task<IActionResult> AddUserAsync(UserDto model)
         {

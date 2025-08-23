@@ -21,6 +21,7 @@ namespace Assignment__Management_System.Controllers
         {
             _instructorService = instructorService;
         }
+        [Authorize(Roles = "Instructor")]
         [HttpGet("InstructorCourses")]
         public IActionResult GetInstructorCourses() 
         {

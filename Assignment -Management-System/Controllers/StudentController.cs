@@ -1,5 +1,6 @@
 ﻿using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Assignment__Management_System.Controllers
@@ -14,6 +15,7 @@ namespace Assignment__Management_System.Controllers
         {
             this.studentService = studentService;
         }
+        [Authorize(Roles = "Student")]
         [HttpGet("SubmitDetails")]
         public IActionResult GetsubmissionDetails([FromQuery]int assignid)
         {
@@ -23,6 +25,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result); 
         }
+        [Authorize(Roles = "Student")]
         [HttpGet]
         public IActionResult GetCourseEnrollments()
         {
@@ -32,6 +35,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : NotFound(result);
         }
+        [Authorize(Roles = "Instructor")]
         [HttpGet("{name}")]
         public IActionResult GetStudentByname(string name)
         {
