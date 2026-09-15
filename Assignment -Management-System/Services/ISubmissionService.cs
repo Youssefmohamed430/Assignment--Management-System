@@ -6,7 +6,8 @@ namespace Assignment__Management_System.Services
 {
     public interface ISubmissionService
     {
-        ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO Sub,string stuid);
+        ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO Sub, string stuid);
         ResponseModel<IQueryable<SubmitDTO>> GetSubs(int assignid);
+        ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetSubmissionFile(int submissionId);
     }
 }
