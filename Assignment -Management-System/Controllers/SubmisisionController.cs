@@ -3,7 +3,6 @@ using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Assignment__Management_System.Controllers
 {
@@ -17,19 +16,25 @@ namespace Assignment__Management_System.Controllers
         {
             Submissionservice = submissionservice;
         }
+
         [Authorize(Roles = "Student")]
         [HttpPost]
-        public IActionResult SubmitAssignment(SubmitDTO sub)
+        [RequestSizeLimit(10 * 1024 * 1024)]
+        public IActionResult SubmitAssignment([FromForm] SubmitDTO sub)
         {
-            if(!ModelState.IsValid) 
+            if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             var studentid = User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
 
-            var result = Submissionservice.SubmitAssignment(sub,studentid);
+            if (string.IsNullOrWhiteSpace(studentid))
+                return Unauthorized();
+
+            var result = Submissionservice.SubmitAssignment(sub, studentid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+
         [Authorize(Roles = "Instructor")]
         [HttpGet("{assignid}")]
         public IActionResult GetSubs(int assignid)
@@ -37,6 +42,21 @@ namespace Assignment__Management_System.Controllers
             var result = Submissionservice.GetSubs(assignid);
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize(Roles = "Instructor")]
+        [HttpGet("file/{submissionId}")]
+        public IActionResult GetSubmissionFile(int submissionId)
+        {
+            var result = Submissionservice.GetSubmissionFile(submissionId);
+
+            if (!result.IsSuccess)
+                return NotFound(result);
+
+            return File(
+                result.Value.FileBytes,
+                result.Value.ContentType,
+                result.Value.FileName);
         }
     }
 }
