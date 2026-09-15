@@ -29,6 +29,8 @@ namespace Assignment__Management_System.Services
 
         public ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO sub, string stuid)
         {
+            string? physicalFilePath = null;
+
             try
             {
                 if (context.Submissions.Any(x => x.StuId == stuid && x.AssignmentId == sub.AssignmentId))
@@ -57,8 +59,12 @@ namespace Assignment__Management_System.Services
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "This file type is not allowed!", null);
 
+                // Strip any client-provided directory information.
                 var originalFileName = Path.GetFileName(sub.File.FileName);
-                var storedFileName = $"{Guid.NewGuid():N}{extension}";
+
+                // The database stores a file name only (never an absolute server path).
+                // A GUID prevents collisions while preserving the original file name.
+                var storedFileName = $"{Guid.NewGuid():N}_{originalFileName}";
 
                 var submissionsDirectory = Path.Combine(
                     environment.ContentRootPath,
@@ -66,17 +72,15 @@ namespace Assignment__Management_System.Services
                     "Submissions");
 
                 Directory.CreateDirectory(submissionsDirectory);
+                physicalFilePath = Path.Combine(submissionsDirectory, storedFileName);
 
-                var filePath = Path.Combine(submissionsDirectory, storedFileName);
-
-                using (var stream = new FileStream(filePath, FileMode.CreateNew))
+                using (var stream = new FileStream(physicalFilePath, FileMode.CreateNew))
                 {
                     sub.File.CopyTo(stream);
                 }
 
                 var submit = new Submission
                 {
-                    // Only the stored file name is saved in the database.
                     FilePath = storedFileName,
                     grade = null,
                     StuId = stuid,
@@ -96,6 +100,10 @@ namespace Assignment__Management_System.Services
             }
             catch (Exception)
             {
+                // Do not leave an orphaned file if database persistence fails.
+                if (physicalFilePath is not null && System.IO.File.Exists(physicalFilePath))
+                    System.IO.File.Delete(physicalFilePath);
+
                 return new ResponseModelFactory()
                     .CreateResponseModel<SubmitDTO>(false, "Submitted Failed!", null);
             }
@@ -114,7 +122,7 @@ namespace Assignment__Management_System.Services
                     stuname = x.student.User.Name,
                     AssignmentId = x.AssignmentId,
                     AssignmentTitle = x.assignment.Title,
-                    FileName = Path.GetFileName(x.FilePath),
+                    FileName = GetOriginalFileName(x.FilePath),
                     grade = x.grade
                 });
 
@@ -136,10 +144,11 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "Submission not found!", default);
 
+            // FilePath is intentionally a file name, not a path supplied by the client.
             var storedFileName = Path.GetFileName(submission.FilePath);
             if (string.IsNullOrWhiteSpace(storedFileName) || !string.Equals(storedFileName, submission.FilePath, StringComparison.Ordinal))
                 return new ResponseModelFactory()
-                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "Invalid file path!", default);
+                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "Invalid file name!", default);
 
             var submissionsDirectory = Path.Combine(environment.ContentRootPath, "App_Data", "Submissions");
             var filePath = Path.Combine(submissionsDirectory, storedFileName);
@@ -156,7 +165,15 @@ namespace Assignment__Management_System.Services
                 .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
                     true,
                     "",
-                    (fileBytes, storedFileName, contentType));
+                    (fileBytes, GetOriginalFileName(storedFileName), contentType));
+        }
+
+        private static string GetOriginalFileName(string storedFileName)
+        {
+            var separatorIndex = storedFileName.IndexOf('_');
+            return separatorIndex >= 0 && separatorIndex < storedFileName.Length - 1
+                ? storedFileName[(separatorIndex + 1)..]
+                : storedFileName;
         }
 
         private static string GetContentType(string extension)
