@@ -21,6 +21,6 @@ namespace Assignment__Management_System.DataLayer.DTOs
         [EmailAddress(ErrorMessage = "In Valid Email")]
         public string Email { get; set; }
         [Required]
-        public string Role { get; set; }
+        public string Role { get; set; } = "Instructor";
     }
 }

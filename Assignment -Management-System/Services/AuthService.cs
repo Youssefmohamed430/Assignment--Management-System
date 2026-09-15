@@ -29,7 +29,7 @@ namespace Assignment__Management_System.Services
             _logger = logger;
         }
 
-        public async Task<AuthModel> AddUserAsync([FromBody] UserDto model)
+        public async Task<AuthModel> RegisterUserAsync(UserDto model)
         {
             _logger.LogInformation($"Login attempt for: {model.UserName}");
 
