@@ -59,18 +59,10 @@ namespace Assignment__Management_System.Services
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "This file type is not allowed!", null);
 
-                // Strip any client-provided directory information.
                 var originalFileName = Path.GetFileName(sub.File.FileName);
-
-                // The database stores a file name only (never an absolute server path).
-                // A GUID prevents collisions while preserving the original file name.
                 var storedFileName = $"{Guid.NewGuid():N}_{originalFileName}";
 
-                var submissionsDirectory = Path.Combine(
-                    environment.ContentRootPath,
-                    "App_Data",
-                    "Submissions");
-
+                var submissionsDirectory = Path.Combine(environment.ContentRootPath, "App_Data", "Submissions");
                 Directory.CreateDirectory(submissionsDirectory);
                 physicalFilePath = Path.Combine(submissionsDirectory, storedFileName);
 
@@ -81,6 +73,7 @@ namespace Assignment__Management_System.Services
 
                 var submit = new Submission
                 {
+                    // Only a file name is stored in the database; the actual file is on the server.
                     FilePath = storedFileName,
                     grade = null,
                     StuId = stuid,
@@ -100,7 +93,6 @@ namespace Assignment__Management_System.Services
             }
             catch (Exception)
             {
-                // Do not leave an orphaned file if database persistence fails.
                 if (physicalFilePath is not null && System.IO.File.Exists(physicalFilePath))
                     System.IO.File.Delete(physicalFilePath);
 
@@ -111,24 +103,35 @@ namespace Assignment__Management_System.Services
 
         public ResponseModel<IQueryable<SubmitDTO>> GetSubs(int assignid)
         {
-            var subs = context.Submissions.AsNoTracking()
+            var submissions = context.Submissions.AsNoTracking()
                 .Include(s => s.student)
                 .ThenInclude(s => s.User)
                 .Include(s => s.assignment)
                 .Where(s => s.AssignmentId == assignid)
-                .Select(x => new SubmitDTO
+                .Select(x => new
                 {
                     SubmissionId = x.SubId,
-                    stuname = x.student.User.Name,
-                    AssignmentId = x.AssignmentId,
+                    StudentName = x.student.User.Name,
+                    x.AssignmentId,
                     AssignmentTitle = x.assignment.Title,
+                    x.FilePath,
+                    x.grade
+                })
+                .ToList()
+                .Select(x => new SubmitDTO
+                {
+                    SubmissionId = x.SubmissionId,
+                    stuname = x.StudentName,
+                    AssignmentId = x.AssignmentId,
+                    AssignmentTitle = x.AssignmentTitle,
                     FileName = GetOriginalFileName(x.FilePath),
                     grade = x.grade
-                });
+                })
+                .AsQueryable();
 
-            if (subs.Any())
+            if (submissions.Any())
                 return new ResponseModelFactory()
-                    .CreateResponseModel<IQueryable<SubmitDTO>>(true, "", subs);
+                    .CreateResponseModel<IQueryable<SubmitDTO>>(true, "", submissions);
             else
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<SubmitDTO>>(false, "No Submits!", null);
@@ -144,7 +147,6 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "Submission not found!", default);
 
-            // FilePath is intentionally a file name, not a path supplied by the client.
             var storedFileName = Path.GetFileName(submission.FilePath);
             if (string.IsNullOrWhiteSpace(storedFileName) || !string.Equals(storedFileName, submission.FilePath, StringComparison.Ordinal))
                 return new ResponseModelFactory()
