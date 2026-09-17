@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace Assignment__Management_System.DataLayer.DTOs
@@ -22,5 +23,7 @@ namespace Assignment__Management_System.DataLayer.DTOs
         public string Email { get; set; }
         [Required]
         public string Role { get; set; }
+        public IFormFile? Image { get; set; }
+        public string? ImageName { get; set; }
     }
 }
