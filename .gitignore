@@ -72,6 +72,8 @@ node_modules/
 *.ldf
 *.ndf
 
-# Local submission files - stored on the server, never in source control
+# Local uploaded files - stored on the server, never in source control
 Assignment -Management-System/App_Data/Submissions/*
 !Assignment -Management-System/App_Data/Submissions/.gitkeep
+Assignment -Management-System/App_Data/Assignments/*
+!Assignment -Management-System/App_Data/Assignments/.gitkeep
