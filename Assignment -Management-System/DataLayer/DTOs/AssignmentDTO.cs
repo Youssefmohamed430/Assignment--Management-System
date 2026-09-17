@@ -1,4 +1,6 @@
-﻿namespace Assignment__Management_System.DataLayer.DTOs
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Assignment__Management_System.DataLayer.DTOs
 {
     public class AssignmentDTO
     {
@@ -7,5 +9,7 @@
         public string? CrsName { get; set; }
         public int? CrsId { get; set; }
         public DateOnly DeadLine { get; set; }
+        public IFormFile? File { get; set; }
+        public string? FileName { get; set; }
     }
 }
