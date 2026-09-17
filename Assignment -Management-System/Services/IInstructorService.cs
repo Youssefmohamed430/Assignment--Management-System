@@ -1,6 +1,7 @@
-﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Models.Entities;
+using Microsoft.AspNetCore.Http;
 
 namespace Assignment__Management_System.Services
 {
@@ -13,5 +14,7 @@ namespace Assignment__Management_System.Services
         ResponseModel<IQueryable<InstructorDTO>> GetInstructors();
         ResponseModel<IQueryable<CourseDto>> GetInstructorCourses(string instid);
         ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetAssignmentFile(int assignmentId);
+        ResponseModel<InstructorDTO> UpdateProfileImage(string instructorId, IFormFile image);
+        ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetProfileImage(string instructorId);
     }
 }
