@@ -6,20 +6,36 @@ using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Azure.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace Assignment__Management_System.Services
 {
     public class InstructorService : IInstructorService
     {
+        private const long MaxFileSize = 10 * 1024 * 1024;
+        private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pdf", ".doc", ".docx", ".txt", ".zip", ".rar",
+            ".cs", ".cpp", ".c", ".java", ".py", ".js", ".ts",
+            ".html", ".css", ".json", ".xml", ".sql",
+            ".png", ".jpg", ".jpeg"
+        };
+
         private readonly AppDbContext _context;
         private readonly TokenRequestModel Request;
         private readonly INotificationService _notificationService;
+        private readonly IWebHostEnvironment _environment;
 
-        public InstructorService(AppDbContext context, INotificationService notificationService)
+        public InstructorService(
+            AppDbContext context,
+            INotificationService notificationService,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _notificationService = notificationService;
+            _environment = environment;
         }
+
         public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
         {
             if(model.DeadLine < DateOnly.FromDateTime(DateTime.Now))
@@ -27,22 +43,48 @@ namespace Assignment__Management_System.Services
                     .CreateResponseModel<AssignmentDTO>(false, "Deadline cannot be in the past!", null);
 
             if (!_context.Courses.Any(c => c.CrsId == model.CrsId))
-                    return new ResponseModelFactory()
-                        .CreateResponseModel<AssignmentDTO>(false, "Course Not Found!", null);
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Course Not Found!", null);
 
-            var assignment = new Assignment()
-            {
-                Title = model.Title,
-                DeadLine = model.DeadLine,
-                CrsId = Convert.ToInt32(model.CrsId),
-            };
+            if (model.File == null || model.File.Length == 0)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment file is required!", null);
 
-            _context.Assignments.Add(assignment);
+            if (model.File.Length > MaxFileSize)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment file cannot exceed 10 MB!", null);
+
+            var originalFileName = Path.GetFileName(model.File.FileName);
+            var extension = Path.GetExtension(originalFileName);
+
+            if (string.IsNullOrWhiteSpace(originalFileName) || !AllowedExtensions.Contains(extension))
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Unsupported assignment file type!", null);
+
+            var storedFileName = $"{Guid.NewGuid():N}_{originalFileName}";
+            var uploadDirectory = Path.Combine(_environment.ContentRootPath, "App_Data", "Assignments");
+            var storedFilePath = Path.Combine(uploadDirectory, storedFileName);
 
             try
             {
+                Directory.CreateDirectory(uploadDirectory);
+
+                using (var stream = new FileStream(storedFilePath, FileMode.CreateNew))
+                {
+                    model.File.CopyTo(stream);
+                }
+
+                var assignment = new Assignment()
+                {
+                    Title = model.Title,
+                    DeadLine = model.DeadLine,
+                    CrsId = Convert.ToInt32(model.CrsId),
+                    FilePath = storedFileName
+                };
+
+                _context.Assignments.Add(assignment);
                 _context.SaveChanges();
-                
+
                 _notificationService.NotifyStudentsOfNewAssignment(assignment);
 
                 model.AssignmentId = assignment.Id;
@@ -50,16 +92,85 @@ namespace Assignment__Management_System.Services
                     .Where(c => c.CrsId == model.CrsId)
                     .Select(c => c.CrsName)
                     .FirstOrDefault();
+                model.FileName = originalFileName;
+                model.File = null;
 
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(true,"Adding Successfully",model);
             }
             catch (Exception ex)
             {
+                if (System.IO.File.Exists(storedFilePath))
+                    System.IO.File.Delete(storedFilePath);
+
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
         }
+
+        public ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetAssignmentFile(int assignmentId)
+        {
+            var assignment = _context.Assignments
+                .AsNoTracking()
+                .FirstOrDefault(a => a.Id == assignmentId);
+
+            if (assignment == null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "Assignment Not Found!", default);
+
+            if (string.IsNullOrWhiteSpace(assignment.FilePath))
+                return new ResponseModelFactory()
+                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "No file attached to this assignment!", default);
+
+            var storedFileName = Path.GetFileName(assignment.FilePath);
+            var filePath = Path.Combine(_environment.ContentRootPath, "App_Data", "Assignments", storedFileName);
+
+            if (!System.IO.File.Exists(filePath))
+                return new ResponseModelFactory()
+                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, "Assignment file not found on server!", default);
+
+            try
+            {
+                var bytes = System.IO.File.ReadAllBytes(filePath);
+                var originalFileName = GetOriginalFileName(storedFileName);
+                var contentType = GetContentType(Path.GetExtension(originalFileName));
+
+                return new ResponseModelFactory()
+                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                        true, "", (bytes, originalFileName, contentType));
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModelFactory()
+                    .CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, ex.Message, default);
+            }
+        }
+
+        private static string GetOriginalFileName(string storedFileName)
+        {
+            var separatorIndex = storedFileName.IndexOf('_');
+            return separatorIndex >= 0
+                ? storedFileName[(separatorIndex + 1)..]
+                : storedFileName;
+        }
+
+        private static string GetContentType(string extension)
+        {
+            return extension.ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".txt" => "text/plain",
+                ".zip" => "application/zip",
+                ".rar" => "application/vnd.rar",
+                ".cs" or ".cpp" or ".c" or ".java" or ".py" or ".js" or ".ts" or ".html" or ".css" or ".json" or ".xml" or ".sql" => "text/plain",
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                _ => "application/octet-stream"
+            };
+        }
+
         public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId,double Grade)
         {
             if(Grade < 0 || Grade > 10)
@@ -76,9 +187,7 @@ namespace Assignment__Management_System.Services
                 .FirstOrDefault(s => s.SubId == submissionId);
 
                 sub.grade = Grade;
-
                 _context.Update(sub);
-
                 _context.SaveChanges();
 
                 return new ResponseModelFactory()
@@ -90,7 +199,8 @@ namespace Assignment__Management_System.Services
                      .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
         }
-        public ResponseModel<IQueryable<Submission>>  GetSubmissions(int AssignId)
+
+        public ResponseModel<IQueryable<Submission>> GetSubmissions(int AssignId)
         {
             var subs = _context.Submissions.AsNoTracking()
                 .Include(s => s.assignment)
@@ -105,6 +215,7 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<Submission>>(false, "No available submissions!", null);
         }
+
         public ResponseModel<IQueryable<AssignmentStudentGrades>> GetAssignmentStudentGrades(int assignmentid)
         {
             var studgrades = _context.Submissions
@@ -125,6 +236,7 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                   .CreateResponseModel<IQueryable<AssignmentStudentGrades>>(false, "No Submission available for this assignment!", null);
         }
+
         public ResponseModel<IQueryable<InstructorDTO>> GetInstructors()
         {
             var insts = _context.Instructors
@@ -143,6 +255,7 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<InstructorDTO>>(false, "No Instructors available!", null);
         }
+
         public ResponseModel<IQueryable<CourseDto>> GetInstructorCourses(string instid)
         {
             var course = _context.Courses
