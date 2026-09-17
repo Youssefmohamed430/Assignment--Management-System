@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Assignment__Management_System.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250413082143_initv4")]
-    partial class initv4
+    [Migration("20260917091126_Initev1")]
+    partial class Initev1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -82,7 +82,7 @@ namespace Assignment__Management_System.Migrations
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
@@ -94,16 +94,7 @@ namespace Assignment__Management_System.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("Users", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Users_Email_Format", "Email LIKE '%@%'");
-
-                            t.HasCheckConstraint("CK_Users_Name_Length", "LEN(Name) >= 3");
-
-                            t.HasCheckConstraint("CK_Users_PhoneNumber_Format", "PhoneNumber NOT LIKE '%[^0-9]%'");
-
-                            t.HasCheckConstraint("CK_Users_UserName_Format", "LEN(UserName) >= 3");
-                        });
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("Assignment__Management_System.Models.Entities.Assignment", b =>
@@ -119,6 +110,9 @@ namespace Assignment__Management_System.Migrations
 
                     b.Property<DateOnly>("DeadLine")
                         .HasColumnType("date");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -140,8 +134,9 @@ namespace Assignment__Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CrsId"));
 
-                    b.Property<int>("CrsName")
-                        .HasColumnType("int");
+                    b.Property<string>("CrsName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InstId")
                         .IsRequired()
@@ -179,7 +174,7 @@ namespace Assignment__Management_System.Migrations
                     b.ToTable("Instructors");
                 });
 
-            modelBuilder.Entity("Assignment__Management_System.Models.Entities.Notification", b =>
+            modelBuilder.Entity("Assignment__Management_System.Models.Entities.Notifications", b =>
                 {
                     b.Property<int>("NotifId")
                         .ValueGeneratedOnAdd()
@@ -187,7 +182,7 @@ namespace Assignment__Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotifId"));
 
-                    b.Property<bool?>("IsRead")
+                    b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
                     b.Property<string>("Message")
@@ -434,10 +429,10 @@ namespace Assignment__Management_System.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Assignment__Management_System.Models.Entities.Notification", b =>
+            modelBuilder.Entity("Assignment__Management_System.Models.Entities.Notifications", b =>
                 {
                     b.HasOne("Assignment__Management_System.Models.Entities.ApplicationUser", "Reciver")
-                        .WithMany("Notifications")
+                        .WithMany()
                         .HasForeignKey("ReciverId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -528,8 +523,6 @@ namespace Assignment__Management_System.Migrations
 
             modelBuilder.Entity("Assignment__Management_System.Models.Entities.ApplicationUser", b =>
                 {
-                    b.Navigation("Notifications");
-
                     b.Navigation("instructor")
                         .IsRequired();
 
