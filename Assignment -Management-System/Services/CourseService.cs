@@ -78,6 +78,7 @@ namespace Assignment__Management_System.Services
                 }
                 catch (Exception ex)
                 {
+                    _imageStorage.DeleteImage("Courses", course.ImagePath);
                     return new ResponseModelFactory()
                         .CreateResponseModel<CourseDto>(false,ex.Message, null);
                 }
