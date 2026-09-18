@@ -11,10 +11,12 @@ namespace Assignment__Management_System.Services
     public class CourseService : ICourseService
     {
         private readonly AppDbContext _context;
+        private readonly ImageStorageService _imageStorage;
 
-        public CourseService(AppDbContext context)
+        public CourseService(AppDbContext context, ImageStorageService imageStorage)
         {
             _context = context;
+            _imageStorage = imageStorage;
         }
         public ResponseModel<IQueryable<CourseDto>> GetCourses()
         {
@@ -24,7 +26,8 @@ namespace Assignment__Management_System.Services
                                 Id = x.CrsId,   
                                 CrsName = x.CrsName,
                                 InstId = x.InstId,
-                                InstName = x.instructor.User.Name
+                                InstName = x.instructor.User.Name,
+                                ImageName = x.ImagePath
                             });
 
             if (course == null)
@@ -37,6 +40,8 @@ namespace Assignment__Management_System.Services
 
         public ResponseModel<CourseDto> AddCourses(CourseDto model)
         {
+            if (model.Image == null || model.Image.Length == 0)
+                return new ResponseModelFactory().CreateResponseModel<CourseDto>(false, "Course image is required!", null);
             var result = _context.Courses.Any(c => c.CrsName == model.CrsName);
 
             if (!result)
@@ -47,11 +52,26 @@ namespace Assignment__Management_System.Services
                     InstId = model.InstId,
                 };
 
+                string storedImage;
+                try
+                {
+                    storedImage = _imageStorage.SaveImage(model.Image, "Courses");
+                    course.ImagePath = storedImage;
+                }
+                catch (Exception ex)
+                {
+                    return new ResponseModelFactory().CreateResponseModel<CourseDto>(false, ex.Message, null);
+                }
+
                 try
                 {
                     _context.Courses.Add(course);
 
                     _context.SaveChanges();
+
+                    model.Id = course.CrsId;
+                    model.ImageName = course.ImagePath;
+                    model.Image = null;
 
                     return new ResponseModelFactory()
                         .CreateResponseModel<CourseDto>(true, "Adding Successfully", model);
@@ -121,7 +141,8 @@ namespace Assignment__Management_System.Services
                         Id = c.CrsId,
                         CrsName = c.CrsName,
                         InstId = c.InstId,
-                        InstName = c.instructor.User.Name
+                        InstName = c.instructor.User.Name,
+                        ImageName = c.ImagePath
                     }).FirstOrDefault();
 
                 return new ResponseModelFactory()
@@ -131,6 +152,30 @@ namespace Assignment__Management_System.Services
             {
                 return new ResponseModelFactory()
                     .CreateResponseModel<CourseDto>(false, ex.Message, null);
+            }
+        }
+
+        public ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetCourseImage(int courseId)
+        {
+            var imageName = _context.Courses.AsNoTracking()
+                .Where(c => c.CrsId == courseId)
+                .Select(c => c.ImagePath)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(imageName))
+                return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                    false, "No course image found!", default);
+
+            try
+            {
+                var image = _imageStorage.ReadImage("Courses", imageName);
+                return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                    true, "", (image.Bytes, imageName, image.ContentType));
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                    false, ex.Message, default);
             }
         }
 
