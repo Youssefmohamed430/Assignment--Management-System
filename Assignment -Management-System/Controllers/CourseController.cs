@@ -40,7 +40,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Created() : BadRequest(result);
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         [HttpGet("Image/{id}")]
         public IActionResult GetCourseImage(int id)
         {
