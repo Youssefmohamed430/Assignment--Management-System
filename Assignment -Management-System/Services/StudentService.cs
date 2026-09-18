@@ -49,7 +49,7 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory().CreateResponseModel<UserDto>(false, "Name cannot be empty!", null);
 
             var student = context.Users.AsNoTracking().Where(u => u.Name == name)
-                .Select(s => new UserDto { UserName = s.UserName, Name = s.Name, Email = s.Email }).FirstOrDefault();
+                .Select(s => new UserDto { UserName = s.UserName, Name = s.Name, Email = s.Email, ImageName = context.Students.Where(st => st.Id == s.Id).Select(st => st.ImagePath).FirstOrDefault() }).FirstOrDefault();
 
             return student != null
                 ? new ResponseModelFactory().CreateResponseModel<UserDto>(true, "", student)
