@@ -30,7 +30,8 @@ namespace Assignment__Management_System.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        public IActionResult AddNewCourse(CourseDto model)
+        [RequestSizeLimit(ImageStorageService.MaxImageSize)]
+        public IActionResult AddNewCourse([FromForm] CourseDto model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -39,6 +40,17 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Created() : BadRequest(result);
         }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("Image/{id}")]
+        public IActionResult GetCourseImage(int id)
+        {
+            var result = courseService.GetCourseImage(id);
+            if (!result.IsSuccess)
+                return NotFound(result);
+
+            return File(result.Value.FileBytes, result.Value.ContentType);
+        }
+
         [Authorize(Roles = "Student")]
         [HttpPost("EnrollCourse")]
         public IActionResult EnrollCourse(CourseEnrollDTO model)
