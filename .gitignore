@@ -77,3 +77,11 @@ Assignment -Management-System/App_Data/Submissions/*
 !Assignment -Management-System/App_Data/Submissions/.gitkeep
 Assignment -Management-System/App_Data/Assignments/*
 !Assignment -Management-System/App_Data/Assignments/.gitkeep
+
+# Local uploaded images - stored on the server, never in source control
+Assignment -Management-System/App_Data/Students/*
+!Assignment -Management-System/App_Data/Students/.gitkeep
+Assignment -Management-System/App_Data/Instructors/*
+!Assignment -Management-System/App_Data/Instructors/.gitkeep
+Assignment -Management-System/App_Data/Courses/*
+!Assignment -Management-System/App_Data/Courses/.gitkeep

@@ -1,7 +1,9 @@
 ﻿using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
+using Assignment__Management_System.DataLayer.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Assignment__Management_System.Controllers
 {
@@ -41,6 +43,26 @@ namespace Assignment__Management_System.Controllers
         {
             var result = studentService.GetStudentByname(name);
             return result.IsSuccess ? Ok(result) : NotFound(result);
+        }
+        [Authorize(Roles = "Student")]
+        [HttpPut("ProfileImage")]
+        [RequestSizeLimit(ImageStorageService.MaxImageSize)]
+        public IActionResult UpdateProfileImage([FromForm] ImageUploadDTO model)
+        {
+            var studentId = User.FindFirstValue("uid");
+            var result = studentService.UpdateProfileImage(studentId, model.Image);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpGet("ProfileImage/{studentId}")]
+        public IActionResult GetProfileImage(string studentId)
+        {
+            var result = studentService.GetProfileImage(studentId);
+            if (!result.IsSuccess)
+                return NotFound(result);
+
+            return File(result.Value.FileBytes, result.Value.ContentType);
         }
     }
 }

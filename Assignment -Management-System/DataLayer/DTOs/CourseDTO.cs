@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Assignment__Management_System.DataLayer.DTOs
 {
@@ -10,5 +11,7 @@ namespace Assignment__Management_System.DataLayer.DTOs
         [Required]
         public string InstId { get; set; }
         public string? InstName { get; set; }
+        public IFormFile? Image { get; set; }
+        public string? ImageName { get; set; }
     }
 }

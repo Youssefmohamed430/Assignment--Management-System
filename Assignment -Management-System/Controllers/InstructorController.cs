@@ -58,6 +58,27 @@ namespace Assignment__Management_System.Controllers
         }
 
         [Authorize(Roles = "Instructor")]
+        [HttpPut("ProfileImage")]
+        [RequestSizeLimit(ImageStorageService.MaxImageSize)]
+        public IActionResult UpdateProfileImage([FromForm] ImageUploadDTO model)
+        {
+            var instructorId = User.FindFirstValue("uid");
+            var result = _instructorService.UpdateProfileImage(instructorId, model.Image);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [Authorize]
+        [HttpGet("ProfileImage/{instructorId}")]
+        public IActionResult GetProfileImage(string instructorId)
+        {
+            var result = _instructorService.GetProfileImage(instructorId);
+            if (!result.IsSuccess)
+                return NotFound(result);
+
+            return File(result.Value.FileBytes, result.Value.ContentType);
+        }
+
+        [Authorize(Roles = "Instructor")]
         [HttpPut]
         public IActionResult UpdateAssignmentsGrades([FromQuery]int Subid ,[FromQuery] double grade)
         {

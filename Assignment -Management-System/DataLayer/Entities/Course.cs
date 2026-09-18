@@ -1,10 +1,11 @@
-﻿namespace Assignment__Management_System.Models.Entities
+namespace Assignment__Management_System.Models.Entities
 {
     public class Course
-    {   
+    {
         public int CrsId { get; set; }
         public string CrsName { get; set; }
         public string InstId { get; set; }
+        public string? ImagePath { get; set; }
         public Instructor? instructor { get; set; }
         public List<Assignment>? assignments { get; set; }
         public List<CourseEnrollments>? courseEnrollments { get; set; }
