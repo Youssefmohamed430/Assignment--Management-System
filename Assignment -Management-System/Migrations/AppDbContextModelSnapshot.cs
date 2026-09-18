@@ -79,7 +79,7 @@ namespace Assignment__Management_System.Migrations
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
@@ -91,16 +91,7 @@ namespace Assignment__Management_System.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("Users", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Users_Email_Format", "Email LIKE '%@%'");
-
-                            t.HasCheckConstraint("CK_Users_Name_Length", "LEN(Name) >= 3");
-
-                            t.HasCheckConstraint("CK_Users_PhoneNumber_Format", "PhoneNumber NOT LIKE '%[^0-9]%'");
-
-                            t.HasCheckConstraint("CK_Users_UserName_Format", "LEN(UserName) >= 3");
-                        });
+                    b.ToTable("AspNetUsers", (string)null);
                 });
 
             modelBuilder.Entity("Assignment__Management_System.Models.Entities.Assignment", b =>
@@ -116,6 +107,9 @@ namespace Assignment__Management_System.Migrations
 
                     b.Property<DateOnly>("DeadLine")
                         .HasColumnType("date");
+
+                    b.Property<string>("FilePath")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()

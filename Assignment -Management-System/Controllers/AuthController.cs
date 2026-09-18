@@ -31,16 +31,32 @@ namespace Assignment__Management_System.Controllers
 
             return Ok(result);
         }
-        [Authorize(Roles = "Admin")]
-        [HttpPost("AddUser")]
-        public async Task<IActionResult> AddUserAsync(UserDto model)
+        [HttpPost("RegisterUser")]
+        public async Task<IActionResult> RegisterInstructorAsync(UserDto model)
         {
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var result = await _authService.AddUserAsync(model);
+            var result = await _authService.RegisterUserAsync(model);
 
             if(!result.IsAuthenticated)
+                return BadRequest(result.Message);
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = "Instructor")]
+        [HttpPost("RegisterStudent")]
+        public async Task<IActionResult> RegisterStudentAsync(UserDto model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            model.Role = "Student"; 
+
+            var result = await _authService.RegisterUserAsync(model);
+
+            if (!result.IsAuthenticated)
                 return BadRequest(result.Message);
 
             return Ok(result);

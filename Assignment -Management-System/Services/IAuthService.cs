@@ -6,7 +6,7 @@ namespace Assignment__Management_System.Services
 {
     public interface IAuthService
     {
-        Task<AuthModel> AddUserAsync(UserDto model);
+        Task<AuthModel> RegisterUserAsync(UserDto model);
         Task<AuthModel> LoginAsync(TokenRequestModel model);
     }
 }

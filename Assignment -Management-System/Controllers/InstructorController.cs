@@ -52,9 +52,9 @@ namespace Assignment__Management_System.Controllers
                 return NotFound(result);
 
             return File(
-                result.Value.FileBytes,
-                result.Value.ContentType,
-                result.Value.FileName);
+                result.Result.FileBytes,
+                result.Result.ContentType,
+                result.Result.FileName);
         }
 
         [Authorize(Roles = "Instructor")]
