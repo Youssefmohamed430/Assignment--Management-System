@@ -25,15 +25,18 @@ namespace Assignment__Management_System.Services
         private readonly TokenRequestModel Request;
         private readonly INotificationService _notificationService;
         private readonly IWebHostEnvironment _environment;
+        private readonly ImageStorageService _imageStorage;
 
         public InstructorService(
             AppDbContext context,
             INotificationService notificationService,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            ImageStorageService imageStorage)
         {
             _context = context;
             _notificationService = notificationService;
             _environment = environment;
+            _imageStorage = imageStorage;
         }
 
         public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
@@ -171,6 +174,60 @@ namespace Assignment__Management_System.Services
             };
         }
 
+        public ResponseModel<InstructorDTO> UpdateProfileImage(string instructorId, IFormFile image)
+        {
+            var instructor = _context.Instructors.FirstOrDefault(i => i.Id == instructorId);
+            if (instructor == null)
+                return new ResponseModelFactory().CreateResponseModel<InstructorDTO>(false, "Instructor not found!", null);
+
+            var oldImage = instructor.ImagePath;
+            try
+            {
+                var newImage = _imageStorage.SaveImage(image, "Instructors");
+                instructor.ImagePath = newImage;
+                _context.SaveChanges();
+                _imageStorage.DeleteImage("Instructors", oldImage);
+
+                var dto = new InstructorDTO
+                {
+                    id = instructor.Id,
+                    Name = _context.Users.Where(u => u.Id == instructor.Id).Select(u => u.Name).FirstOrDefault(),
+                    ImageName = newImage
+                };
+
+                return new ResponseModelFactory().CreateResponseModel<InstructorDTO>(
+                    true, "Profile image updated successfully!", dto);
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModelFactory().CreateResponseModel<InstructorDTO>(false, ex.Message, null);
+            }
+        }
+
+        public ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetProfileImage(string instructorId)
+        {
+            var imageName = _context.Instructors.AsNoTracking()
+                .Where(i => i.Id == instructorId)
+                .Select(i => i.ImagePath)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(imageName))
+                return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                    false, "No profile image found!", default);
+
+            try
+            {
+                var image = _imageStorage.ReadImage("Instructors", imageName);
+                return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                    true, "", (image.Bytes, imageName, image.ContentType));
+            }
+            catch (Exception ex)
+            {
+                return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(
+                    false, ex.Message, default);
+            }
+        }
+
         public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId,double Grade)
         {
             if(Grade < 0 || Grade > 10)
@@ -245,7 +302,8 @@ namespace Assignment__Management_System.Services
                 .Select(i => new InstructorDTO()
                 {
                     Name = i.User.Name,
-                    id = i.Id
+                    id = i.Id,
+                    ImageName = i.ImagePath
                 });
 
             if (insts != null)
