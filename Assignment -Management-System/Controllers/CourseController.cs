@@ -48,7 +48,7 @@ namespace Assignment__Management_System.Controllers
             if (!result.IsSuccess)
                 return NotFound(result);
 
-            return File(result.Value.FileBytes, result.Value.ContentType);
+            return File(result.Result.FileBytes, result.Result.ContentType);
         }
 
         [Authorize(Roles = "Student")]

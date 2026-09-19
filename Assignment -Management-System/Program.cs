@@ -3,13 +3,14 @@ using Assignment__Management_System.Helpers;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Assignment__Management_System.Services;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Mapster;
-using MapsterMapper;
 
 
 namespace Assignment__Management_System
@@ -24,21 +25,28 @@ namespace Assignment__Management_System
 
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddCors(corsOptions =>
-
-                corsOptions.AddPolicy("MyPolicy", CorsPolicy =>
-
-                CorsPolicy.AllowAnyHeader()
-
-                .AllowAnyMethod()
-
-                .AllowAnyOrigin())
-
-            );
-
             var config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
                 .Build();
+
+            var allowedOrigins =
+            config.GetSection("Cors:AllowedOrigins")
+                         .Get<string[]>() ?? [];
+
+            builder.Services.AddCors(corsOptions =>
+
+                corsOptions.AddDefaultPolicy(policy =>
+                {
+                    policy
+                        .WithOrigins(allowedOrigins)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                })
+
+            );
+
+            
 
             var Connectionstring = config.GetSection("constr").Value;
 
