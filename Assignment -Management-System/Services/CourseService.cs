@@ -21,14 +21,15 @@ namespace Assignment__Management_System.Services
         public ResponseModel<IQueryable<CourseDto>> GetCourses()
         {
             var course = _context.Courses
-                            .Select( x => new CourseDto()
-                            {
-                                Id = x.CrsId,   
-                                CrsName = x.CrsName,
-                                InstId = x.InstId,
-                                InstName = x.instructor.User.Name,
-                                ImageName = x.ImagePath
-                            });
+                .Select(x => new CourseDto()
+                {
+                    Id = x.CrsId,
+                    CrsName = x.CrsName,
+                    InstId = x.InstId,
+                    InstName = x.instructor.User.Name,
+                    ImageName = x.ImagePath,
+                    ImageUrl = $"/api/Course/Image/{x.CrsId}"
+                });
 
             if (course == null)
                 return new ResponseModelFactory()

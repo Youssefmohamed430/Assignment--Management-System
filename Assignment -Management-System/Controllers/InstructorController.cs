@@ -42,7 +42,6 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        [Authorize(Roles = "Instructor")]
         [HttpGet("file/{assignmentId}")]
         public IActionResult GetAssignmentFile(int assignmentId)
         {

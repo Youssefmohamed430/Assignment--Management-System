@@ -21,8 +21,6 @@ namespace Assignment__Management_System.DataLayer.DTOs
         [Required]
         [EmailAddress(ErrorMessage = "In Valid Email")]
         public string Email { get; set; }
-        [Required]
-        public IFormFile? Image { get; set; }
         public string? ImageName { get; set; }
         public string Role { get; set; } = "Instructor";
     }

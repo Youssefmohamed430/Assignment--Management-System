@@ -43,7 +43,6 @@ namespace Assignment__Management_System
                         .AllowAnyHeader()
                         .AllowCredentials();
                 })
-
             );
 
             
@@ -125,7 +124,7 @@ namespace Assignment__Management_System
 
             app.UseStaticFiles();
 
-            app.UseCors("MyPolicy");
+            app.UseCors();
 
             app.UseHttpsRedirection();
 
