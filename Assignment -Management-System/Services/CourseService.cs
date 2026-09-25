@@ -18,6 +18,29 @@ namespace Assignment__Management_System.Services
             _context = context;
             _imageStorage = imageStorage;
         }
+
+        public ResponseModel<CourseDto> GetCourseById(int id)
+        {
+            var course = _context.Courses
+                .Where(c => c.CrsId == id)
+                .Select(x => new CourseDto()
+                {
+                    Id = x.CrsId,
+                    CrsName = x.CrsName,
+                    InstId = x.InstId,
+                    InstName = x.instructor.User.Name,
+                    ImageName = x.ImagePath,
+                    ImageUrl = $"/api/Course/Image/{x.CrsId}"
+                })
+                .FirstOrDefault();
+
+            if (course == null)
+                return new ResponseModelFactory()
+                 .CreateResponseModel<CourseDto>(false, "Course Not Found!", null);
+            else
+                return new ResponseModelFactory()
+                 .CreateResponseModel<CourseDto>(true, "", course);
+        }
         public ResponseModel<IQueryable<CourseDto>> GetCourses()
         {
             var course = _context.Courses

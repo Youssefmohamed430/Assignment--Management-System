@@ -18,12 +18,17 @@ namespace Assignment__Management_System.Controllers
             this.courseService = _courseService;
         }
 
+        [HttpGet("{id}")]
+        public IActionResult GetCourseById(int id)
+        {
+            var result = courseService.GetCourseById(id);
+
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet]
         public IActionResult GetCourses()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             var result = courseService.GetCourses();
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
@@ -77,6 +82,7 @@ namespace Assignment__Management_System.Controllers
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public IActionResult DeleteCourse(int id)

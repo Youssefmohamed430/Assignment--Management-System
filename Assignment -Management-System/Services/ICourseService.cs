@@ -7,6 +7,7 @@ namespace Assignment__Management_System.Services
 {
     public interface ICourseService
     {
+        ResponseModel<CourseDto> GetCourseById(int id);
         ResponseModel<CourseDto> AddCourses(CourseDto model);
         ResponseModel<CourseEnrollDTO> EnrollCourse(CourseEnrollDTO model, string userid);
         ResponseModel<IQueryable<CourseDto>> GetCourses();
