@@ -33,6 +33,13 @@ namespace Assignment__Management_System.Controllers
         [RequestSizeLimit(10 * 1024 * 1024)]
         public IActionResult AddAssignmentToCourse([FromForm] AssignmentDTO assignment)
         {
+            //Console.WriteLine($"Title: {assignment.Title}");
+            //Console.WriteLine($"Deadline: {assignment.DeadLine}");
+            //Console.WriteLine($"CourseId: {assignment.CrsId}");
+            //Console.WriteLine($"File: {assignment.File?.FileName}");
+            //Console.WriteLine($"File Size: {assignment.File?.Length}");
+
+            //return Ok(assignment); 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 

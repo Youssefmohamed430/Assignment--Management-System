@@ -1,9 +1,10 @@
-﻿using Assignment__Management_System.DataLayer.DTOs;
+﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer.DTOs;
 
 namespace Assignment__Management_System.Services
 {
     public interface IAdminService
     {
-        //string AddCourses(CourseDto model);
+        Task<AuthModel> AddAdmin(UserDto model);
     }
 }
