@@ -138,7 +138,8 @@ namespace Assignment__Management_System.Services
                     TotalAssignments = 0,
                     AverageCourseGrade = 0,
                     LateSubmissions = 0,
-                    RecentActivity = new List<InstructorRecentActivityDto>()
+                    RecentActivity = new List<InstructorRecentActivityDto>(),
+                    SubmissionAssignments = new List<InstructorAssignmentSubmissionsDto>()
                 };
                 return new ResponseModelFactory()
                     .CreateResponseModel<InstructorDashboardDto>(true, "", emptyDashboard);
@@ -223,6 +224,23 @@ namespace Assignment__Management_System.Services
                 .Take(10)
                 .ToList();
 
+            var submissionAssignments = _context.Assignments
+                .AsNoTracking()
+                .Where(a => courseIds.Contains(a.CrsId) && _context.Submissions.Any(s => s.AssignmentId == a.Id))
+                .OrderBy(a => a.DeadLine)
+                .Select(a => new InstructorAssignmentSubmissionsDto
+                {
+                    AssignmentId = a.Id,
+                    Title = a.Title,
+                    CourseId = a.CrsId,
+                    CourseName = _context.Courses
+                        .Where(c => c.CrsId == a.CrsId)
+                        .Select(c => c.CrsName)
+                        .FirstOrDefault() ?? string.Empty,
+                    PendingSubmissions = _context.Submissions.Count(s => s.AssignmentId == a.Id && s.grade == null)
+                })
+                .ToList();
+
             var dto = new InstructorDashboardDto
             {
                 MyCourses = myCourses,
@@ -231,7 +249,8 @@ namespace Assignment__Management_System.Services
                 TotalAssignments = totalAssignments,
                 AverageCourseGrade = averageGrade,
                 LateSubmissions = lateSubmissions,
-                RecentActivity = recentActivity
+                RecentActivity = recentActivity,
+                SubmissionAssignments = submissionAssignments
             };
 
             return new ResponseModelFactory()
@@ -484,7 +503,11 @@ namespace Assignment__Management_System.Services
             {
                 sub.grade = Grade;
                 sub.Status = SubmissionStatus.Graded;
-                _context.Update(sub);
+                _context.Notifications.Add(new Notifications
+                {
+                    ReciverId = sub.StuId,
+                    Message = $"Your submission for '{sub.assignment?.Title ?? _context.Assignments.Where(a => a.Id == sub.AssignmentId).Select(a => a.Title).FirstOrDefault()}' has been graded: {Grade}/10."
+                });
                 _context.SaveChanges();
 
                 return new ResponseModelFactory()
@@ -587,6 +610,11 @@ namespace Assignment__Management_System.Services
 
             sub.Feedback = Feedback;
 
+            _context.Notifications.Add(new Notifications
+            {
+                ReciverId = sub.StuId,
+                Message = $"Your instructor left feedback on your submission for '{_context.Assignments.Where(a => a.Id == sub.AssignmentId).Select(a => a.Title).FirstOrDefault()}'."
+            });
             _context.SaveChanges();
 
             return new ResponseModelFactory()

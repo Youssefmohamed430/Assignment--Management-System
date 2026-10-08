@@ -36,7 +36,17 @@ namespace Assignment__Management_System.Services
             var Assignsub = context.Submissions.AsNoTracking()
                 .Include(e => e.assignment)
                 .Where(s => s.AssignmentId == assignid && s.StuId == studid)
-                .Select(x => new AssignmentSubsDetails { Title = x.assignment.Title, DeadLine = x.assignment.DeadLine, FileName = Path.GetFileName(x.FilePath), grade = x.grade ?? 0 });
+                .OrderByDescending(x => x.AttemptNumber)
+                .Select(x => new AssignmentSubsDetails
+                {
+                    Title = x.assignment.Title,
+                    DeadLine = x.assignment.DeadLine,
+                    FileName = Path.GetFileName(x.FilePath),
+                    grade = x.grade,
+                    Feedback = x.Feedback,
+                    AttemptNumber = x.AttemptNumber,
+                    SubmitedAt = x.SubmitedAt
+                });
 
             return Assignsub.Any()
                 ? new ResponseModelFactory().CreateResponseModel<IQueryable<AssignmentSubsDetails>>(true, "", Assignsub)
@@ -49,7 +59,15 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory().CreateResponseModel<UserDto>(false, "Name cannot be empty!", null);
 
             var student = context.Users.AsNoTracking().Where(u => u.Name == name)
-                .Select(s => new UserDto { UserName = s.UserName, Name = s.Name, Email = s.Email, ImageName = context.Students.Where(st => st.Id == s.Id).Select(st => st.ImagePath).FirstOrDefault() }).FirstOrDefault();
+                .Select(s => new UserDto
+                {
+                    Id = s.Id,
+                    UserName = s.UserName,
+                    Name = s.Name,
+                    Email = s.Email,
+                    ImageName = context.Students.Where(st => st.Id == s.Id).Select(st => st.ImagePath).FirstOrDefault()
+                })
+                .FirstOrDefault();
 
             return student != null
                 ? new ResponseModelFactory().CreateResponseModel<UserDto>(true, "", student)
@@ -72,7 +90,7 @@ namespace Assignment__Management_System.Services
                 imageStorage.DeleteImage("Students", oldImage);
 
                 var user = context.Users.FirstOrDefault(u => u.Id == studentId);
-                var dto = new UserDto { UserName = user?.UserName, Name = user?.Name, Email = user?.Email, ImageName = newImage };
+                var dto = new UserDto { Id = user?.Id, UserName = user?.UserName, Name = user?.Name, Email = user?.Email, ImageName = newImage };
                 return new ResponseModelFactory().CreateResponseModel<UserDto>(true, "Profile image updated successfully!", dto);
             }
             catch (Exception ex)

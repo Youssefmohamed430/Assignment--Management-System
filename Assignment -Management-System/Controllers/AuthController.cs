@@ -37,6 +37,7 @@ namespace Assignment__Management_System.Controllers
             if(!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            model.Role = "Instructor";
             var result = await _authService.RegisterUserAsync(model);
 
             if(!result.IsAuthenticated)
@@ -45,7 +46,7 @@ namespace Assignment__Management_System.Controllers
             return Ok(result);
         }
 
-        [Authorize(Roles = "Instructor")]
+        [Authorize(Roles = "Admin")]
         [HttpPost("RegisterStudent")]
         public async Task<IActionResult> RegisterStudentAsync(UserDto model)
         {

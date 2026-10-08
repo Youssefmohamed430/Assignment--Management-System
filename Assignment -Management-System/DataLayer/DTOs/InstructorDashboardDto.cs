@@ -10,6 +10,15 @@ namespace Assignment__Management_System.DataLayer.DTOs
         public DateTime Timestamp { get; set; }
     }
 
+    public class InstructorAssignmentSubmissionsDto
+    {
+        public int AssignmentId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int CourseId { get; set; }
+        public string CourseName { get; set; } = string.Empty;
+        public int PendingSubmissions { get; set; }
+    }
+
     public class InstructorDashboardDto
     {
         public int MyCourses { get; set; }
@@ -19,5 +28,6 @@ namespace Assignment__Management_System.DataLayer.DTOs
         public double AverageCourseGrade { get; set; }
         public int LateSubmissions { get; set; }
         public List<InstructorRecentActivityDto> RecentActivity { get; set; } = new();
+        public List<InstructorAssignmentSubmissionsDto> SubmissionAssignments { get; set; } = new();
     }
 }

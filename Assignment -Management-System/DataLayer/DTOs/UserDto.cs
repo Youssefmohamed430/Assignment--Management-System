@@ -6,6 +6,7 @@ namespace Assignment__Management_System.DataLayer.DTOs
 {
     public class UserDto
     {
+        public string? Id { get; set; }
         [Required]
         [Length(3,25,ErrorMessage ="User Name Must be between 3 to 25 character!")]
         [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "Username must contain only letters and numbers")]

@@ -9,5 +9,8 @@ namespace Assignment__Management_System.DataLayer.DTOs
         public DateTime DeadLine { get; set; }
         public string FileName { get; set; }
         public double? grade { get; set; }
+        public string? Feedback { get; set; }
+        public int AttemptNumber { get; set; }
+        public DateTime SubmitedAt { get; set; }
     }
 }
