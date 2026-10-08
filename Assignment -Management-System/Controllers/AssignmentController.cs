@@ -19,7 +19,9 @@ namespace Assignment__Management_System.Controllers
         [HttpGet("{crsid}")]
         public IActionResult GetAssignmentsToCourse(int crsid)
         {
-            var result = assignmentService.GetAssignments(crsid);
+            var result = assignmentService.GetAssignments(
+                crsid,
+                includeHidden: User.IsInRole("Instructor"));
 
             return result != null ? Ok(result) : BadRequest("No Assignments!");
         }

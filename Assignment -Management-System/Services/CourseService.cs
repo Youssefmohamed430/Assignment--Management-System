@@ -204,6 +204,65 @@ namespace Assignment__Management_System.Services
             }
         }
 
+        public ResponseModel<List<CourseAnnouncementDto>> GetCourseAnnouncements(int courseId, string userId, bool isInstructor)
+        {
+            var course = _context.Courses.AsNoTracking()
+                .FirstOrDefault(c => c.CrsId == courseId);
+            if (course == null)
+                return new ResponseModelFactory().CreateResponseModel<List<CourseAnnouncementDto>>(false, "Course not found.", null);
+
+            var canRead = isInstructor
+                ? course.InstId == userId
+                : _context.CourseEnrollments.Any(e => e.CrsId == courseId && e.StuId == userId);
+            if (!canRead)
+                return new ResponseModelFactory().CreateResponseModel<List<CourseAnnouncementDto>>(false, "You are not a member of this course.", null);
+
+            var announcements = _context.CourseAnnouncements.AsNoTracking()
+                .Where(a => a.CourseId == courseId)
+                .OrderByDescending(a => a.CreatedAt)
+                .Select(a => new CourseAnnouncementDto
+                {
+                    Id = a.Id,
+                    CourseId = a.CourseId,
+                    Message = a.Message,
+                    CreatedAt = a.CreatedAt
+                })
+                .ToList();
+
+            return new ResponseModelFactory().CreateResponseModel<List<CourseAnnouncementDto>>(true, "", announcements);
+        }
+
+        public ResponseModel<CourseAnnouncementDto> CreateCourseAnnouncement(int courseId, string instructorId, string message)
+        {
+            var course = _context.Courses.FirstOrDefault(c => c.CrsId == courseId);
+            if (course == null)
+                return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "Course not found.", null);
+            if (course.InstId != instructorId)
+                return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "You can only post announcements for your own courses.", null);
+            if (string.IsNullOrWhiteSpace(message))
+                return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "Announcement message is required.", null);
+            if (message.Length > 2000)
+                return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "Announcement message cannot exceed 2000 characters.", null);
+
+            var announcement = new CourseAnnouncement
+            {
+                CourseId = courseId,
+                Message = message.Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.CourseAnnouncements.Add(announcement);
+            _context.SaveChanges();
+
+            var result = new CourseAnnouncementDto
+            {
+                Id = announcement.Id,
+                CourseId = announcement.CourseId,
+                Message = announcement.Message,
+                CreatedAt = announcement.CreatedAt
+            };
+            return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(true, "Announcement posted.", result);
+        }
+
         public ResponseModel<CourseDto> DeleteCourses(int crsid)
         {
             try

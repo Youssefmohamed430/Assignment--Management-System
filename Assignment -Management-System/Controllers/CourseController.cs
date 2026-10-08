@@ -26,6 +26,33 @@ namespace Assignment__Management_System.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
+        [Authorize(Roles = "Student,Instructor")]
+        [HttpGet("{courseId}/announcements")]
+        public IActionResult GetCourseAnnouncements(int courseId)
+        {
+            var userId = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized();
+
+            var result = courseService.GetCourseAnnouncements(courseId, userId, User.IsInRole("Instructor"));
+            return result.IsSuccess ? Ok(result) : Forbid();
+        }
+
+        [Authorize(Roles = "Instructor")]
+        [HttpPost("{courseId}/announcements")]
+        public IActionResult CreateCourseAnnouncement(int courseId, [FromBody] CreateCourseAnnouncementDto model)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var instructorId = User.FindFirstValue("uid") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(instructorId))
+                return Unauthorized();
+
+            var result = courseService.CreateCourseAnnouncement(courseId, instructorId, model.Message);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet]
         public IActionResult GetCourses()
         {

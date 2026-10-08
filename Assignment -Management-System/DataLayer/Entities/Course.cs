@@ -9,5 +9,6 @@ namespace Assignment__Management_System.Models.Entities
         public Instructor? instructor { get; set; }
         public List<Assignment>? assignments { get; set; }
         public List<CourseEnrollments>? courseEnrollments { get; set; }
+        public List<CourseAnnouncement>? Announcements { get; set; }
     }
 }

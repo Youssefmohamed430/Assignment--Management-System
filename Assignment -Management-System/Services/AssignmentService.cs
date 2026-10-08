@@ -38,11 +38,12 @@ namespace Assignment__Management_System.Services
             }
         }
 
-        public ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId)
+        public ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId, bool includeHidden = false)
         {
             var assignments = _context.Assignments.AsNoTracking()
                 .Include(a => a.course)
-                .Where(a => a.CrsId == CrsId && a.Status != AssignmentStatus.Draft && a.Status != AssignmentStatus.Archived)
+                .Where(a => a.CrsId == CrsId &&
+                    (includeHidden || (a.Status != AssignmentStatus.Draft && a.Status != AssignmentStatus.Archived)))
                 .Select(x => new AssignmentDTO()
                 {
                     AssignmentId = x.Id,

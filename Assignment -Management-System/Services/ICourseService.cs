@@ -14,5 +14,7 @@ namespace Assignment__Management_System.Services
         ResponseModel<CourseDto> UpdateCourses(CourseDto model, int crsid);
         ResponseModel<CourseDto> DeleteCourses(int crsid);
         ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetCourseImage(int courseId);
+        ResponseModel<List<CourseAnnouncementDto>> GetCourseAnnouncements(int courseId, string userId, bool isInstructor);
+        ResponseModel<CourseAnnouncementDto> CreateCourseAnnouncement(int courseId, string instructorId, string message);
     }
 }

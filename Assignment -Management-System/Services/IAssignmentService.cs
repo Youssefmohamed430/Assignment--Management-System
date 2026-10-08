@@ -6,7 +6,7 @@ namespace Assignment__Management_System.Services
 {
     public interface IAssignmentService
     {
-        ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId);
+        ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId, bool includeHidden = false);
         ResponseModel<AssignmentDTO> GetAssignmentById(int assignmentid);
         ResponseModel<AssignmentDTO> UpdateAssignment(AssignmentDTO assignment,int id);
         ResponseModel<AssignmentDTO> DeleteAssignment(int assignmentid);
