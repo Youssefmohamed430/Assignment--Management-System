@@ -24,17 +24,20 @@ namespace Assignment__Management_System.Services
         private readonly INotificationService _notificationService;
         private readonly IWebHostEnvironment _environment;
         private readonly ImageStorageService _imageStorage;
+        private readonly ILogger<InstructorService> _logger;
 
         public InstructorService(
             AppDbContext context,
             INotificationService notificationService,
             IWebHostEnvironment environment,
-            ImageStorageService imageStorage)
+            ImageStorageService imageStorage,
+            ILogger<InstructorService> logger)
         {
             _context = context;
             _notificationService = notificationService;
             _environment = environment;
             _imageStorage = imageStorage;
+            _logger = logger;
         }
 
         public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
@@ -264,12 +267,18 @@ namespace Assignment__Management_System.Services
                 .FirstOrDefault(a => a.Id == assignmentId);
 
             if (assignment == null)
+            {
+                _logger.LogWarning("Cannot publish assignment {AssignmentId}: assignment was not found", assignmentId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
+            }
 
             if (assignment.course == null || assignment.course.InstId != instructorId)
+            {
+                _logger.LogWarning("User {UserId} was denied publishing assignment {AssignmentId}", instructorId, assignmentId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "You are not authorized to publish this assignment!", null);
+            }
 
             if (assignment.Status == AssignmentStatus.Published)
                 return new ResponseModelFactory()
@@ -281,6 +290,7 @@ namespace Assignment__Management_System.Services
             _context.SaveChanges();
 
             _notificationService.NotifyStudentsOfNewAssignment(assignment);
+            _logger.LogInformation("Assignment {AssignmentId} was published by instructor {InstructorId}", assignmentId, instructorId);
 
             var dto = new AssignmentDTO
             {
@@ -306,17 +316,24 @@ namespace Assignment__Management_System.Services
                 .FirstOrDefault(a => a.Id == assignmentId);
 
             if (assignment == null)
+            {
+                _logger.LogWarning("Cannot close assignment {AssignmentId}: assignment was not found", assignmentId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
+            }
 
             if (assignment.course == null || assignment.course.InstId != instructorId)
+            {
+                _logger.LogWarning("User {UserId} was denied closing assignment {AssignmentId}", instructorId, assignmentId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "You are not authorized to close this assignment!", null);
+            }
 
             assignment.Status = AssignmentStatus.Closed;
             assignment.ClosedAt = DateTime.UtcNow;
 
             _context.SaveChanges();
+            _logger.LogInformation("Assignment {AssignmentId} was closed by instructor {InstructorId}", assignmentId, instructorId);
 
             var dto = new AssignmentDTO
             {
@@ -342,16 +359,23 @@ namespace Assignment__Management_System.Services
                 .FirstOrDefault(a => a.Id == assignmentId);
 
             if (assignment == null)
+            {
+                _logger.LogWarning("Cannot archive assignment {AssignmentId}: assignment was not found", assignmentId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
+            }
 
             if (assignment.course == null || assignment.course.InstId != instructorId)
+            {
+                _logger.LogWarning("User {UserId} was denied archiving assignment {AssignmentId}", instructorId, assignmentId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "You are not authorized to archive this assignment!", null);
+            }
 
             assignment.Status = AssignmentStatus.Archived;
 
             _context.SaveChanges();
+            _logger.LogInformation("Assignment {AssignmentId} was archived by instructor {InstructorId}", assignmentId, instructorId);
 
             var dto = new AssignmentDTO
             {
@@ -491,13 +515,19 @@ namespace Assignment__Management_System.Services
         public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId, double Grade)
         {
             if (Grade < 0 || Grade > 10)
+            {
+                _logger.LogWarning("Rejected invalid grade for submission {SubmissionId}; grade must be between 0 and 10", submissionId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Grade must be between 0 and 10!", null);
+            }
 
             var sub = _context.Submissions.FirstOrDefault(s => s.SubId == submissionId);
             if (sub == null)
+            {
+                _logger.LogWarning("Cannot grade submission {SubmissionId}: submission was not found", submissionId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Submission Not Found!", null);
+            }
 
             try
             {
@@ -509,12 +539,14 @@ namespace Assignment__Management_System.Services
                     Message = $"Your submission for '{sub.assignment?.Title ?? _context.Assignments.Where(a => a.Id == sub.AssignmentId).Select(a => a.Title).FirstOrDefault()}' has been graded: {Grade}/10."
                 });
                 _context.SaveChanges();
+                _logger.LogInformation("Submission {SubmissionId} for assignment {AssignmentId} was graded", submissionId, sub.AssignmentId);
 
                 return new ResponseModelFactory()
                      .CreateResponseModel<AssignmentDTO>(true, "Update Grades success", null);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to grade submission {SubmissionId}", submissionId);
                 return new ResponseModelFactory()
                      .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
@@ -605,8 +637,11 @@ namespace Assignment__Management_System.Services
             var sub = _context.Submissions.FirstOrDefault(s => s.SubId == submissionId);
 
             if (sub == null)
+            {
+                _logger.LogWarning("Cannot add feedback to submission {SubmissionId}: submission was not found", submissionId);
                 return new ResponseModelFactory()
                     .CreateResponseModel<string>(false, "Submission Not Found!", null);
+            }
 
             sub.Feedback = Feedback;
 
@@ -616,6 +651,7 @@ namespace Assignment__Management_System.Services
                 Message = $"Your instructor left feedback on your submission for '{_context.Assignments.Where(a => a.Id == sub.AssignmentId).Select(a => a.Title).FirstOrDefault()}'."
             });
             _context.SaveChanges();
+            _logger.LogInformation("Instructor feedback was saved for submission {SubmissionId} in assignment {AssignmentId}", submissionId, sub.AssignmentId);
 
             return new ResponseModelFactory()
                 .CreateResponseModel<string>(true, "Feedback submitted successfully!", null);

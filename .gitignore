@@ -67,6 +67,10 @@ ScaffoldingReadMe.txt
 # Node.js
 node_modules/
 
+# Local environment configuration and secrets
+**/.env
+!**/.env.example
+
 # SQL Server files
 *.mdf
 *.ldf

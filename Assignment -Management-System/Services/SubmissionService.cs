@@ -20,11 +20,13 @@ namespace Assignment__Management_System.Services
 
         private readonly AppDbContext context;
         private readonly IWebHostEnvironment environment;
+        private readonly ILogger<SubmissionService> logger;
 
-        public SubmissionService(AppDbContext context, IWebHostEnvironment environment)
+        public SubmissionService(AppDbContext context, IWebHostEnvironment environment, ILogger<SubmissionService> logger)
         {
             this.context = context;
             this.environment = environment;
+            this.logger = logger;
         }
 
         public ResponseModel<SubmitDTO> SubmitAssignment(SubmitDTO sub, string stuid)
@@ -37,20 +39,32 @@ namespace Assignment__Management_System.Services
                     .FirstOrDefault(a => a.Id == sub.AssignmentId);
 
                 if (assignment == null)
+                {
+                    logger.LogWarning("Student {StudentId} attempted to submit to missing assignment {AssignmentId}", stuid, sub.AssignmentId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "Assignment not found!", null);
+                }
 
                 if (assignment.Status == AssignmentStatus.Draft)
+                {
+                    logger.LogWarning("Student {StudentId} attempted submission to draft assignment {AssignmentId}", stuid, sub.AssignmentId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "Cannot submit to a draft assignment!", null);
+                }
 
                 if (assignment.Status == AssignmentStatus.Closed)
+                {
+                    logger.LogWarning("Student {StudentId} attempted submission to closed assignment {AssignmentId}", stuid, sub.AssignmentId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "Cannot submit to a closed assignment!", null);
+                }
 
                 if (assignment.Status == AssignmentStatus.Archived)
+                {
+                    logger.LogWarning("Student {StudentId} attempted submission to archived assignment {AssignmentId}", stuid, sub.AssignmentId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "Cannot submit to an archived assignment!", null);
+                }
 
                 var LastSubmission = context.Submissions
                     .Where(s => s.AssignmentId == sub.AssignmentId && s.StuId == stuid)
@@ -58,17 +72,26 @@ namespace Assignment__Management_System.Services
                     .FirstOrDefault();
 
                 if (sub.File is null || sub.File.Length == 0)
+                {
+                    logger.LogWarning("Student {StudentId} attempted empty upload for assignment {AssignmentId}", stuid, sub.AssignmentId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "Please select a file to submit!", null);
+                }
 
                 if (sub.File.Length > MaxFileSize)
+                {
+                    logger.LogWarning("Student {StudentId} upload exceeded the size limit for assignment {AssignmentId}; size {FileSizeBytes}", stuid, sub.AssignmentId, sub.File.Length);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "File size cannot exceed 10 MB!", null);
+                }
 
                 var extension = Path.GetExtension(sub.File.FileName);
                 if (string.IsNullOrWhiteSpace(extension) || !AllowedExtensions.Contains(extension))
+                {
+                    logger.LogWarning("Student {StudentId} uploaded a disallowed file type for assignment {AssignmentId}; extension {FileExtension}", stuid, sub.AssignmentId, extension);
                     return new ResponseModelFactory()
                         .CreateResponseModel<SubmitDTO>(false, "This file type is not allowed!", null);
+                }
 
                 var originalFileName = Path.GetFileName(sub.File.FileName);
                 var storedFileName = $"{Guid.NewGuid():N}_{originalFileName}";
@@ -98,6 +121,7 @@ namespace Assignment__Management_System.Services
 
                 context.Submissions.Add(submit);
                 context.SaveChanges();
+                logger.LogInformation("Submission {SubmissionId} attempt {AttemptNumber} was received for assignment {AssignmentId} from student {StudentId}; late={IsLate}", submit.SubId, submit.AttemptNumber, submit.AssignmentId, stuid, islate);
 
                 return new ResponseModelFactory()
                     .CreateResponseModel<SubmitDTO>(true, "Submitted Successfully!", new SubmitDTO
@@ -109,6 +133,7 @@ namespace Assignment__Management_System.Services
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Submission upload failed for assignment {AssignmentId} from student {StudentId}", sub.AssignmentId, stuid);
                 if (physicalFilePath is not null && System.IO.File.Exists(physicalFilePath))
                     System.IO.File.Delete(physicalFilePath);
 

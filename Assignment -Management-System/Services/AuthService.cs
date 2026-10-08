@@ -31,13 +31,19 @@ namespace Assignment__Management_System.Services
 
         public async Task<AuthModel> RegisterUserAsync(UserDto model)
         {
-            _logger.LogInformation($"Login attempt for: {model.UserName}");
+            _logger.LogInformation("User registration started for role {Role}", model.Role);
 
             if (await userManager.FindByNameAsync(model.UserName) is not null)
+            {
+                _logger.LogWarning("User registration rejected because the username already exists.");
                 return new AuthModel() { Message = "User Name Is Already Registerd" };
+            }
 
             if (await userManager.FindByEmailAsync(model.Email) is not null)
+            {
+                _logger.LogWarning("User registration rejected because the email already exists.");
                 return new AuthModel() { Message = "Email Is Already Registerd" };
+            }
 
             ApplicationUser user = new ApplicationUser() 
             {
@@ -50,6 +56,10 @@ namespace Assignment__Management_System.Services
 
             if(!result.Succeeded)
             {
+                _logger.LogWarning(
+                    "User registration failed validation for role {Role}; identity returned {ErrorCount} errors.",
+                    model.Role,
+                    result.Errors.Count());
                 var errors = "";
 
                 foreach (var error in result.Errors)
@@ -74,20 +84,23 @@ namespace Assignment__Management_System.Services
             }
 
             var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
+            _logger.LogInformation("User {UserId} registered with role {Role}.", user.Id, model.Role);
 
             return new AuthModelFactory()
                 .CreateAuthModel(user.Id, model.UserName, model.Email, JWTSecurityToken.ValidTo, new List<string> { model.Role }, new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
         }
         public async Task<AuthModel> LoginAsync(TokenRequestModel model) 
         {
-            _logger.LogInformation($"Login attempt for: {model.Username}");
-
             var user = await userManager.FindByNameAsync(model.Username);
 
             if (user == null || !await userManager.CheckPasswordAsync(user,model.password))
+            {
+                _logger.LogWarning("Login failed because the credentials were invalid.");
                 return new AuthModel() { Message = "User Name or Password is incorrect!"};
+            }
             
             var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
+            _logger.LogInformation("User {UserId} logged in successfully.", user.Id);
 
             return new AuthModelFactory()
                 .CreateAuthModel(user.Id, user.UserName, user.Email, JWTSecurityToken.ValidTo,

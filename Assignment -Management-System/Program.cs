@@ -19,15 +19,14 @@ namespace Assignment__Management_System
     {
         public static void Main(string[] args)
         {
+            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
 
             builder.Services.AddSwaggerGen();
 
-            var config = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json")
-                .Build();
+            var config = builder.Configuration;
 
             var allowedOrigins =
             config.GetSection("Cors:AllowedOrigins")
@@ -47,13 +46,20 @@ namespace Assignment__Management_System
 
             
 
-            var Connectionstring = config.GetSection("constr").Value;
+            var connectionString = config.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException("ConnectionStrings__DefaultConnection must be configured in the environment or .env file.");
 
             builder.Services.AddDbContextPool<AppDbContext>(options =>
-                options.UseSqlServer(Connectionstring)    
+                options.UseSqlServer(connectionString)
             );
 
             builder.Services.Configure<JWT>(config.GetSection("JWT"));
+            var jwtKey = config["JWT:Key"];
+            var jwtIssuer = config["JWT:Issuer"];
+            var jwtAudience = config["JWT:Audience"];
+            if (string.IsNullOrWhiteSpace(jwtKey) || string.IsNullOrWhiteSpace(jwtIssuer) || string.IsNullOrWhiteSpace(jwtAudience))
+                throw new InvalidOperationException("JWT__Key, JWT__Issuer, and JWT__Audience must be configured in the environment or .env file.");
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
@@ -92,9 +98,9 @@ namespace Assignment__Management_System
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
-                    ValidIssuer = config["JWT:Issuer"],
-                    ValidAudience = config["JWT:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JWT:Key"]))
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
 

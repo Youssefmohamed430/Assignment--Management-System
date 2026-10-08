@@ -12,11 +12,13 @@ namespace Assignment__Management_System.Services
     {
         private readonly AppDbContext _context;
         private readonly ImageStorageService _imageStorage;
+        private readonly ILogger<CourseService> _logger;
 
-        public CourseService(AppDbContext context, ImageStorageService imageStorage)
+        public CourseService(AppDbContext context, ImageStorageService imageStorage, ILogger<CourseService> logger)
         {
             _context = context;
             _imageStorage = imageStorage;
+            _logger = logger;
         }
 
         public ResponseModel<CourseDto> GetCourseById(int id)
@@ -84,6 +86,7 @@ namespace Assignment__Management_System.Services
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Failed to store image while creating a course.");
                     return new ResponseModelFactory().CreateResponseModel<CourseDto>(false, ex.Message, null);
                 }
 
@@ -97,16 +100,19 @@ namespace Assignment__Management_System.Services
                     model.ImageName = course.ImagePath;
                     model.Image = null;
 
+                    _logger.LogInformation("Course {CourseId} created and assigned to instructor {InstructorId}.", course.CrsId, course.InstId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<CourseDto>(true, "Adding Successfully", model);
                 }
                 catch (Exception ex)
                 {
                     _imageStorage.DeleteImage("Courses", course.ImagePath);
+                    _logger.LogError(ex, "Failed to create course for instructor {InstructorId}.", model.InstId);
                     return new ResponseModelFactory()
                         .CreateResponseModel<CourseDto>(false,ex.Message, null);
                 }
             }
+            _logger.LogWarning("Course creation rejected because a course with the same name already exists.");
             return new ResponseModelFactory()
                         .CreateResponseModel<CourseDto>(false, "This Course already exist!", null);
         }
@@ -129,18 +135,23 @@ namespace Assignment__Management_System.Services
                         .FirstOrDefault()?
                         .course?.CrsName;   
 
+                    _logger.LogInformation("Student {StudentId} enrolled in course {CourseId}.", userid, model.CrsId);
                     return new ResponseModelFactory()
                          .CreateResponseModel<CourseEnrollDTO>(true,"", model);
                 }
                 catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Student {StudentId} failed to enroll in course {CourseId}.", userid, model.CrsId);
                     return new ResponseModelFactory()
                          .CreateResponseModel<CourseEnrollDTO>(false, ex.Message, null);
                 }
             }
             else
+            {
+                _logger.LogWarning("Duplicate enrollment rejected for student {StudentId} in course {CourseId}.", userid, model.CrsId);
                 return new ResponseModelFactory()
                          .CreateResponseModel<CourseEnrollDTO>(false, "Course is already enrolled!", null);
+            }
         }
 
         public ResponseModel<CourseDto> UpdateCourses(CourseDto model, int crsid)
@@ -215,7 +226,10 @@ namespace Assignment__Management_System.Services
                 ? course.InstId == userId
                 : _context.CourseEnrollments.Any(e => e.CrsId == courseId && e.StuId == userId);
             if (!canRead)
+            {
+                _logger.LogWarning("User {UserId} was denied access to announcements for course {CourseId}.", userId, courseId);
                 return new ResponseModelFactory().CreateResponseModel<List<CourseAnnouncementDto>>(false, "You are not a member of this course.", null);
+            }
 
             var announcements = _context.CourseAnnouncements.AsNoTracking()
                 .Where(a => a.CourseId == courseId)
@@ -229,6 +243,7 @@ namespace Assignment__Management_System.Services
                 })
                 .ToList();
 
+            _logger.LogDebug("Loaded {AnnouncementCount} announcements for course {CourseId}.", announcements.Count, courseId);
             return new ResponseModelFactory().CreateResponseModel<List<CourseAnnouncementDto>>(true, "", announcements);
         }
 
@@ -238,7 +253,10 @@ namespace Assignment__Management_System.Services
             if (course == null)
                 return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "Course not found.", null);
             if (course.InstId != instructorId)
+            {
+                _logger.LogWarning("Instructor {InstructorId} was denied permission to post an announcement for course {CourseId}.", instructorId, courseId);
                 return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "You can only post announcements for your own courses.", null);
+            }
             if (string.IsNullOrWhiteSpace(message))
                 return new ResponseModelFactory().CreateResponseModel<CourseAnnouncementDto>(false, "Announcement message is required.", null);
             if (message.Length > 2000)
@@ -252,6 +270,7 @@ namespace Assignment__Management_System.Services
             };
             _context.CourseAnnouncements.Add(announcement);
             _context.SaveChanges();
+            _logger.LogInformation("Instructor {InstructorId} posted announcement {AnnouncementId} for course {CourseId}.", instructorId, announcement.Id, courseId);
 
             var result = new CourseAnnouncementDto
             {
