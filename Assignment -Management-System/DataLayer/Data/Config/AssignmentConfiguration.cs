@@ -15,7 +15,8 @@ namespace Assignment__Management_System.Models.Data.Config
                    .IsRequired();
 
             builder.Property(a => a.Status)
-                   .HasDefaultValue(AssignmentStatus.Published);
+                   .HasDefaultValue(AssignmentStatus.Published)
+                   .HasSentinel((AssignmentStatus)(-1));
 
             builder.HasIndex(a => a.CrsId);
             builder.HasIndex(a => a.Status);

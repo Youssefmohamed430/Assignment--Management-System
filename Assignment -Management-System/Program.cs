@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using DotNetEnv;
 
 
 namespace Assignment__Management_System
@@ -19,7 +20,7 @@ namespace Assignment__Management_System
     {
         public static void Main(string[] args)
         {
-            DotEnv.Load(Path.Combine(Directory.GetCurrentDirectory(), ".env"));
+            Env.TraversePath().Load();
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
@@ -46,12 +47,13 @@ namespace Assignment__Management_System
 
             
 
-            var connectionString = config.GetConnectionString("DefaultConnection");
+            var connectionString = config["constr"];
             if (string.IsNullOrWhiteSpace(connectionString))
-                throw new InvalidOperationException("ConnectionStrings__DefaultConnection must be configured in the environment or .env file.");
+                throw new InvalidOperationException("constr must be configured in the environment or .env file.");
 
             builder.Services.AddDbContextPool<AppDbContext>(options =>
-                options.UseSqlServer(connectionString)
+                options.UseSqlServer(connectionString, sqlOptions =>
+                    sqlOptions.EnableRetryOnFailure())
             );
 
             builder.Services.Configure<JWT>(config.GetSection("JWT"));
