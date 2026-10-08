@@ -16,5 +16,12 @@ namespace Assignment__Management_System.Services
         ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetAssignmentFile(int assignmentId);
         ResponseModel<InstructorDTO> UpdateProfileImage(string instructorId, IFormFile image);
         ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetProfileImage(string instructorId);
+        ResponseModel<string> SetFeedback(int submissionId, string Feedback);
+        
+        // Dashboard & Status Management
+        ResponseModel<InstructorDashboardDto> GetDashboard(string instructorId);
+        ResponseModel<AssignmentDTO> PublishAssignment(int assignmentId, string instructorId);
+        ResponseModel<AssignmentDTO> CloseAssignment(int assignmentId, string instructorId);
+        ResponseModel<AssignmentDTO> ArchiveAssignment(int assignmentId, string instructorId);
     }
 }

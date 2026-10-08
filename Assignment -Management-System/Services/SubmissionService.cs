@@ -1,4 +1,4 @@
-﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models.Data;
@@ -33,18 +33,29 @@ namespace Assignment__Management_System.Services
 
             try
             {
-                if (context.Submissions.Any(x => x.StuId == stuid && x.AssignmentId == sub.AssignmentId))
-                    return new ResponseModelFactory()
-                        .CreateResponseModel<SubmitDTO>(false, "You have already submitted this assignment!", null);
+                var assignment = context.Assignments
+                    .FirstOrDefault(a => a.Id == sub.AssignmentId);
 
-                var dateassignment = context.Assignments
-                    .Where(a => a.Id == sub.AssignmentId)
-                    .Select(a => a.DeadLine)
+                if (assignment == null)
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<SubmitDTO>(false, "Assignment not found!", null);
+
+                if (assignment.Status == AssignmentStatus.Draft)
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<SubmitDTO>(false, "Cannot submit to a draft assignment!", null);
+
+                if (assignment.Status == AssignmentStatus.Closed)
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<SubmitDTO>(false, "Cannot submit to a closed assignment!", null);
+
+                if (assignment.Status == AssignmentStatus.Archived)
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<SubmitDTO>(false, "Cannot submit to an archived assignment!", null);
+
+                var LastSubmission = context.Submissions
+                    .Where(s => s.AssignmentId == sub.AssignmentId && s.StuId == stuid)
+                    .OrderByDescending(s => s.AttemptNumber)
                     .FirstOrDefault();
-
-                if (dateassignment < DateOnly.FromDateTime(DateTime.Now))
-                    return new ResponseModelFactory()
-                        .CreateResponseModel<SubmitDTO>(false, "You cannot submit this assignment, deadline has passed!", null);
 
                 if (sub.File is null || sub.File.Length == 0)
                     return new ResponseModelFactory()
@@ -71,13 +82,18 @@ namespace Assignment__Management_System.Services
                     sub.File.CopyTo(stream);
                 }
 
+                var islate = assignment.DeadLine < DateTime.Now;
+                var isFirstSubmission = LastSubmission is null;
                 var submit = new Submission
                 {
-                    // Only a file name is stored in the database; the actual file is on the server.
                     FilePath = storedFileName,
                     grade = null,
                     StuId = stuid,
                     AssignmentId = sub.AssignmentId,
+                    AttemptNumber = isFirstSubmission ? 1 : LastSubmission.AttemptNumber + 1,
+                    IsLate = islate,
+                    Status = islate ? SubmissionStatus.Late : (isFirstSubmission ? SubmissionStatus.Pending : SubmissionStatus.Resubmitted),
+                    SubmitedAt = DateTime.Now
                 };
 
                 context.Submissions.Add(submit);
@@ -88,16 +104,16 @@ namespace Assignment__Management_System.Services
                     {
                         AssignmentId = submit.AssignmentId,
                         FileName = originalFileName,
-                        SubmissionId = submit.SubId
+                        SubmissionId = submit.SubId,
                     });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 if (physicalFilePath is not null && System.IO.File.Exists(physicalFilePath))
                     System.IO.File.Delete(physicalFilePath);
 
                 return new ResponseModelFactory()
-                    .CreateResponseModel<SubmitDTO>(false, "Submitted Failed!", null);
+                    .CreateResponseModel<SubmitDTO>(false, $"Submission Failed: {ex.Message}", null);
             }
         }
 
@@ -111,9 +127,9 @@ namespace Assignment__Management_System.Services
                 .Select(x => new
                 {
                     SubmissionId = x.SubId,
-                    StudentName = x.student.User.Name,
+                    StudentName = x.student != null && x.student.User != null ? x.student.User.Name : x.StuId,
                     x.AssignmentId,
-                    AssignmentTitle = x.assignment.Title,
+                    AssignmentTitle = x.assignment != null ? x.assignment.Title : "",
                     x.FilePath,
                     x.grade
                 })
@@ -172,6 +188,7 @@ namespace Assignment__Management_System.Services
 
         private static string GetOriginalFileName(string storedFileName)
         {
+            if (string.IsNullOrWhiteSpace(storedFileName)) return string.Empty;
             var separatorIndex = storedFileName.IndexOf('_');
             return separatorIndex >= 0 && separatorIndex < storedFileName.Length - 1
                 ? storedFileName[(separatorIndex + 1)..]

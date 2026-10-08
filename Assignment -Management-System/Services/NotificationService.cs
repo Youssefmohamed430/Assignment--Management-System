@@ -1,9 +1,8 @@
-﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
-using Azure;
 using Microsoft.EntityFrameworkCore;
 
 namespace Assignment__Management_System.Services
@@ -16,6 +15,7 @@ namespace Assignment__Management_System.Services
         {
             this.context = context;
         }
+
         public void CreateNotification(string userId, string message)
         {
             var notif = new Notifications
@@ -37,7 +37,7 @@ namespace Assignment__Management_System.Services
             foreach (var stud in students)
             {
                 CreateNotification(stud.StuId,
-                    $"There is a new assignment {assignment.Title} for the course {stud.course.CrsName} and an dead line is  {assignment.DeadLine:dd/MM/yyyy}.");
+                    $"There is a new assignment {assignment.Title} for the course {stud.course.CrsName} with deadline {assignment.DeadLine:dd/MM/yyyy HH:mm}.");
             }
         }
 
@@ -55,9 +55,9 @@ namespace Assignment__Management_System.Services
                     ReciverId = n.ReciverId
                 });
 
-            if(notifs.Any())    
+            if (notifs.Any())    
                 return new ResponseModelFactory()
-                    .CreateResponseModel<IQueryable<NotificationDTO>>(true,"", notifs);
+                    .CreateResponseModel<IQueryable<NotificationDTO>>(true, "", notifs);
             else
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<NotificationDTO>>(false, "There are no notifications for this user.", null);

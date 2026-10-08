@@ -1,4 +1,4 @@
-﻿using Assignment__Management_System.Models.Entities;
+using Assignment__Management_System.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,6 +12,10 @@ namespace Assignment__Management_System.Models.Data.Config
 
             builder.Property(s => s.grade)
                 .IsRequired(false);
+
+            builder.HasIndex(s => s.AssignmentId);
+            builder.HasIndex(s => s.StuId);
+            builder.HasIndex(s => s.Status);
 
             builder.HasOne(s => s.assignment)
                 .WithMany(a => a.Submissions)

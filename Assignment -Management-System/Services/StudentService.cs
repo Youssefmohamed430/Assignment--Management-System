@@ -97,5 +97,119 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory().CreateResponseModel<(byte[] FileBytes, string FileName, string ContentType)>(false, ex.Message, default);
             }
         }
+
+        public ResponseModel<StudentDashboardDto> GetDashboard(string studentId)
+        {
+            var studentCourseIds = context.CourseEnrollments
+                .AsNoTracking()
+                .Where(e => e.StuId == studentId)
+                .Select(e => e.CrsId)
+                .ToList();
+
+            if (!studentCourseIds.Any())
+            {
+                var emptyDashboard = new StudentDashboardDto
+                {
+                    MyCourses = 0,
+                    PendingAssignments = 0,
+                    DueTomorrow = 0,
+                    AverageGrade = 0,
+                    UpcomingDeadlines = new List<UpcomingAssignmentDto>(),
+                    RecentGrades = new List<RecentGradeDto>()
+                };
+                return new ResponseModelFactory()
+                    .CreateResponseModel<StudentDashboardDto>(true, "", emptyDashboard);
+            }
+
+            int myCourses = studentCourseIds.Count;
+
+            var studentSubmissionAssignmentIds = context.Submissions
+                .AsNoTracking()
+                .Where(s => s.StuId == studentId)
+                .Select(s => s.AssignmentId)
+                .Distinct()
+                .ToList();
+
+            int pendingAssignments = context.Assignments
+                .AsNoTracking()
+                .Where(a => studentCourseIds.Contains(a.CrsId)
+                            && a.Status == AssignmentStatus.Published
+                            && !studentSubmissionAssignmentIds.Contains(a.Id))
+                .Count();
+
+            int dueTomorrow = context.Assignments
+                .AsNoTracking()
+                .Where(a => studentCourseIds.Contains(a.CrsId)
+                            && a.Status == AssignmentStatus.Published
+                            && a.DeadLine > DateTime.Now
+                            && a.DeadLine <= DateTime.Now.AddDays(1))
+                .Count();
+
+            var studentGraded = context.Submissions
+                .AsNoTracking()
+                .Where(s => s.StuId == studentId && s.grade != null);
+
+            double averageGrade = studentGraded.Any() ? Math.Round(studentGraded.Average(s => s.grade.Value), 1) : 0.0;
+
+            var upcomingAssignments = context.Assignments
+                .AsNoTracking()
+                .Include(a => a.course)
+                .Where(a => studentCourseIds.Contains(a.CrsId) && a.Status == AssignmentStatus.Published && a.DeadLine >= DateTime.Now)
+                .OrderBy(a => a.DeadLine)
+                .Take(10)
+                .ToList();
+
+            var upcomingDtos = upcomingAssignments.Select(a =>
+            {
+                var sub = context.Submissions.AsNoTracking().FirstOrDefault(s => s.AssignmentId == a.Id && s.StuId == studentId);
+                string statusStr = sub != null ? (sub.Status == SubmissionStatus.Graded ? "Graded" : "Submitted") : "Pending";
+                TimeSpan remaining = a.DeadLine - DateTime.Now;
+                string remainingStr = remaining.TotalHours < 1 ? $"{Math.Max(0, remaining.Minutes)} mins" :
+                                      remaining.TotalHours < 24 ? $"{remaining.Hours} hours" :
+                                      $"{remaining.Days} days {remaining.Hours} hours";
+
+                return new UpcomingAssignmentDto
+                {
+                    AssignmentId = a.Id,
+                    Title = a.Title,
+                    CourseId = a.CrsId,
+                    CourseName = a.course != null ? a.course.CrsName : "",
+                    Deadline = a.DeadLine,
+                    RemainingTime = remainingStr,
+                    Status = statusStr
+                };
+            }).ToList();
+
+            var recentGrades = context.Submissions
+                .AsNoTracking()
+                .Include(s => s.assignment)
+                .ThenInclude(a => a.course)
+                .Where(s => s.StuId == studentId && s.grade != null)
+                .OrderByDescending(s => s.SubmitedAt)
+                .Take(5)
+                .Select(s => new RecentGradeDto
+                {
+                    AssignmentId = s.AssignmentId,
+                    AssignmentTitle = s.assignment != null ? s.assignment.Title : "",
+                    CourseId = s.assignment != null ? s.assignment.CrsId : 0,
+                    CourseName = (s.assignment != null && s.assignment.course != null) ? s.assignment.course.CrsName : "",
+                    Grade = s.grade.Value,
+                    GradedAt = s.SubmitedAt
+                })
+                .ToList();
+
+            var dashboardDto = new StudentDashboardDto
+            {
+                MyCourses = myCourses,
+                PendingAssignments = pendingAssignments,
+                DueTomorrow = dueTomorrow,
+                AverageGrade = averageGrade,
+                UpcomingDeadlines = upcomingDtos,
+                RecentGrades = recentGrades
+            };
+
+            return new ResponseModelFactory()
+                .CreateResponseModel<StudentDashboardDto>(true, "", dashboardDto);
+        }
     }
 }

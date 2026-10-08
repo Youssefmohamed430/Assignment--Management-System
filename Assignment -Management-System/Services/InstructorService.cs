@@ -1,10 +1,9 @@
-﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models;
 using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
-using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 
@@ -22,7 +21,6 @@ namespace Assignment__Management_System.Services
         };
 
         private readonly AppDbContext _context;
-        private readonly TokenRequestModel Request;
         private readonly INotificationService _notificationService;
         private readonly IWebHostEnvironment _environment;
         private readonly ImageStorageService _imageStorage;
@@ -41,13 +39,18 @@ namespace Assignment__Management_System.Services
 
         public ResponseModel<AssignmentDTO> AddAssignmentToCourse(string userid, AssignmentDTO model)
         {
-            if(model.DeadLine < DateOnly.FromDateTime(DateTime.Now))
+            if (model.DeadLine < DateTime.Now)
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Deadline cannot be in the past!", null);
 
-            if (!_context.Courses.Any(c => c.CrsId == model.CrsId))
+            var course = _context.Courses.FirstOrDefault(c => c.CrsId == model.CrsId);
+            if (course == null)
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Course Not Found!", null);
+
+            if (course.InstId != userid)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "You are not the instructor of this course!", null);
 
             if (model.File == null || model.File.Length == 0)
                 return new ResponseModelFactory()
@@ -77,29 +80,35 @@ namespace Assignment__Management_System.Services
                     model.File.CopyTo(stream);
                 }
 
+                var initialStatus = model.Status ?? AssignmentStatus.Published;
+
                 var assignment = new Assignment()
                 {
                     Title = model.Title,
                     DeadLine = model.DeadLine,
                     CrsId = Convert.ToInt32(model.CrsId),
-                    FilePath = storedFileName
+                    FilePath = storedFileName,
+                    Status = initialStatus,
+                    PublishedAt = initialStatus == AssignmentStatus.Published ? DateTime.UtcNow : null
                 };
 
                 _context.Assignments.Add(assignment);
                 _context.SaveChanges();
 
-                _notificationService.NotifyStudentsOfNewAssignment(assignment);
+                if (initialStatus == AssignmentStatus.Published)
+                {
+                    _notificationService.NotifyStudentsOfNewAssignment(assignment);
+                }
 
                 model.AssignmentId = assignment.Id;
-                model.CrsName = _context.Courses
-                    .Where(c => c.CrsId == model.CrsId)
-                    .Select(c => c.CrsName)
-                    .FirstOrDefault();
+                model.CrsName = course.CrsName;
                 model.FileName = originalFileName;
                 model.File = null;
+                model.Status = assignment.Status;
+                model.PublishedAt = assignment.PublishedAt;
 
                 return new ResponseModelFactory()
-                    .CreateResponseModel<AssignmentDTO>(true,"Adding Successfully",model);
+                    .CreateResponseModel<AssignmentDTO>(true, "Adding Successfully", model);
             }
             catch (Exception ex)
             {
@@ -109,6 +118,237 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
+        }
+
+        public ResponseModel<InstructorDashboardDto> GetDashboard(string instructorId)
+        {
+            var courseIds = _context.Courses
+                .AsNoTracking()
+                .Where(c => c.InstId == instructorId)
+                .Select(c => c.CrsId)
+                .ToList();
+
+            if (!courseIds.Any())
+            {
+                var emptyDashboard = new InstructorDashboardDto
+                {
+                    MyCourses = 0,
+                    TotalStudents = 0,
+                    PendingSubmissions = 0,
+                    TotalAssignments = 0,
+                    AverageCourseGrade = 0,
+                    LateSubmissions = 0,
+                    RecentActivity = new List<InstructorRecentActivityDto>()
+                };
+                return new ResponseModelFactory()
+                    .CreateResponseModel<InstructorDashboardDto>(true, "", emptyDashboard);
+            }
+
+            int myCourses = courseIds.Count;
+
+            int totalStudents = _context.CourseEnrollments
+                .AsNoTracking()
+                .Where(e => courseIds.Contains(e.CrsId))
+                .Select(e => e.StuId)
+                .Distinct()
+                .Count();
+
+            int pendingSubmissions = _context.Submissions
+                .AsNoTracking()
+                .Where(s => courseIds.Contains(s.assignment.CrsId) && s.grade == null)
+                .Count();
+
+            int totalAssignments = _context.Assignments
+                .AsNoTracking()
+                .Where(a => courseIds.Contains(a.CrsId))
+                .Count();
+
+            int lateSubmissions = _context.Submissions
+                .AsNoTracking()
+                .Where(s => courseIds.Contains(s.assignment.CrsId) && (s.IsLate || s.Status == SubmissionStatus.Late || s.SubmitedAt > s.assignment.DeadLine))
+                .Count();
+
+            var gradedQuery = _context.Submissions
+                .AsNoTracking()
+                .Where(s => courseIds.Contains(s.assignment.CrsId) && s.grade != null);
+
+            double averageGrade = gradedQuery.Any() ? Math.Round(gradedQuery.Average(s => s.grade.Value), 1) : 0.0;
+
+            var recentSubmissions = _context.Submissions
+                .AsNoTracking()
+                .Include(s => s.student)
+                .ThenInclude(st => st.User)
+                .Include(s => s.assignment)
+                .Where(s => courseIds.Contains(s.assignment.CrsId))
+                .OrderByDescending(s => s.SubmitedAt)
+                .Take(5)
+                .Select(s => new InstructorRecentActivityDto
+                {
+                    ActivityType = "Submission",
+                    Description = $"Student {(s.student.User != null ? s.student.User.Name : s.StuId)} submitted {s.assignment.Title}",
+                    Timestamp = s.SubmitedAt
+                })
+                .ToList();
+
+            var deadlineActivities = _context.Assignments
+                .AsNoTracking()
+                .Where(a => courseIds.Contains(a.CrsId) && a.Status == AssignmentStatus.Published && a.DeadLine > DateTime.Now && a.DeadLine <= DateTime.Now.AddDays(3))
+                .OrderBy(a => a.DeadLine)
+                .Take(5)
+                .Select(a => new InstructorRecentActivityDto
+                {
+                    ActivityType = "DeadlineApproaching",
+                    Description = $"Assignment '{a.Title}' deadline is approaching ({a.DeadLine:yyyy-MM-dd HH:mm})",
+                    Timestamp = a.DeadLine
+                })
+                .ToList();
+
+            var notifActivities = _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.ReciverId == instructorId)
+                .OrderByDescending(n => n.SendDate)
+                .Take(5)
+                .Select(n => new InstructorRecentActivityDto
+                {
+                    ActivityType = "Notification",
+                    Description = n.Message,
+                    Timestamp = n.SendDate
+                })
+                .ToList();
+
+            var recentActivity = recentSubmissions
+                .Concat(deadlineActivities)
+                .Concat(notifActivities)
+                .OrderByDescending(a => a.Timestamp)
+                .Take(10)
+                .ToList();
+
+            var dto = new InstructorDashboardDto
+            {
+                MyCourses = myCourses,
+                TotalStudents = totalStudents,
+                PendingSubmissions = pendingSubmissions,
+                TotalAssignments = totalAssignments,
+                AverageCourseGrade = averageGrade,
+                LateSubmissions = lateSubmissions,
+                RecentActivity = recentActivity
+            };
+
+            return new ResponseModelFactory()
+                .CreateResponseModel<InstructorDashboardDto>(true, "", dto);
+        }
+
+        public ResponseModel<AssignmentDTO> PublishAssignment(int assignmentId, string instructorId)
+        {
+            var assignment = _context.Assignments
+                .Include(a => a.course)
+                .FirstOrDefault(a => a.Id == assignmentId);
+
+            if (assignment == null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
+
+            if (assignment.course == null || assignment.course.InstId != instructorId)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "You are not authorized to publish this assignment!", null);
+
+            if (assignment.Status == AssignmentStatus.Published)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment is already published!", null);
+
+            assignment.Status = AssignmentStatus.Published;
+            assignment.PublishedAt = DateTime.UtcNow;
+
+            _context.SaveChanges();
+
+            _notificationService.NotifyStudentsOfNewAssignment(assignment);
+
+            var dto = new AssignmentDTO
+            {
+                AssignmentId = assignment.Id,
+                Title = assignment.Title,
+                CrsId = assignment.CrsId,
+                CrsName = assignment.course.CrsName,
+                DeadLine = assignment.DeadLine,
+                FileName = GetOriginalFileName(assignment.FilePath ?? ""),
+                Status = assignment.Status,
+                PublishedAt = assignment.PublishedAt,
+                ClosedAt = assignment.ClosedAt
+            };
+
+            return new ResponseModelFactory()
+                .CreateResponseModel<AssignmentDTO>(true, "Assignment published successfully!", dto);
+        }
+
+        public ResponseModel<AssignmentDTO> CloseAssignment(int assignmentId, string instructorId)
+        {
+            var assignment = _context.Assignments
+                .Include(a => a.course)
+                .FirstOrDefault(a => a.Id == assignmentId);
+
+            if (assignment == null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
+
+            if (assignment.course == null || assignment.course.InstId != instructorId)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "You are not authorized to close this assignment!", null);
+
+            assignment.Status = AssignmentStatus.Closed;
+            assignment.ClosedAt = DateTime.UtcNow;
+
+            _context.SaveChanges();
+
+            var dto = new AssignmentDTO
+            {
+                AssignmentId = assignment.Id,
+                Title = assignment.Title,
+                CrsId = assignment.CrsId,
+                CrsName = assignment.course.CrsName,
+                DeadLine = assignment.DeadLine,
+                FileName = GetOriginalFileName(assignment.FilePath ?? ""),
+                Status = assignment.Status,
+                PublishedAt = assignment.PublishedAt,
+                ClosedAt = assignment.ClosedAt
+            };
+
+            return new ResponseModelFactory()
+                .CreateResponseModel<AssignmentDTO>(true, "Assignment closed successfully!", dto);
+        }
+
+        public ResponseModel<AssignmentDTO> ArchiveAssignment(int assignmentId, string instructorId)
+        {
+            var assignment = _context.Assignments
+                .Include(a => a.course)
+                .FirstOrDefault(a => a.Id == assignmentId);
+
+            if (assignment == null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
+
+            if (assignment.course == null || assignment.course.InstId != instructorId)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<AssignmentDTO>(false, "You are not authorized to archive this assignment!", null);
+
+            assignment.Status = AssignmentStatus.Archived;
+
+            _context.SaveChanges();
+
+            var dto = new AssignmentDTO
+            {
+                AssignmentId = assignment.Id,
+                Title = assignment.Title,
+                CrsId = assignment.CrsId,
+                CrsName = assignment.course.CrsName,
+                DeadLine = assignment.DeadLine,
+                FileName = GetOriginalFileName(assignment.FilePath ?? ""),
+                Status = assignment.Status,
+                PublishedAt = assignment.PublishedAt,
+                ClosedAt = assignment.ClosedAt
+            };
+
+            return new ResponseModelFactory()
+                .CreateResponseModel<AssignmentDTO>(true, "Assignment archived successfully!", dto);
         }
 
         public ResponseModel<(byte[] FileBytes, string FileName, string ContentType)> GetAssignmentFile(int assignmentId)
@@ -151,6 +391,7 @@ namespace Assignment__Management_System.Services
 
         private static string GetOriginalFileName(string storedFileName)
         {
+            if (string.IsNullOrWhiteSpace(storedFileName)) return string.Empty;
             var separatorIndex = storedFileName.IndexOf('_');
             return separatorIndex >= 0
                 ? storedFileName[(separatorIndex + 1)..]
@@ -228,29 +469,28 @@ namespace Assignment__Management_System.Services
             }
         }
 
-        public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId,double Grade)
+        public ResponseModel<AssignmentDTO> UpdateAssignmentsGrades(int submissionId, double Grade)
         {
-            if(Grade < 0 || Grade > 10)
+            if (Grade < 0 || Grade > 10)
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Grade must be between 0 and 10!", null);
 
-            if(!_context.Submissions.Any(s => s.SubId == submissionId))
+            var sub = _context.Submissions.FirstOrDefault(s => s.SubId == submissionId);
+            if (sub == null)
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Submission Not Found!", null);
 
             try
             {
-                var sub = _context.Submissions.AsNoTracking()
-                .FirstOrDefault(s => s.SubId == submissionId);
-
                 sub.grade = Grade;
+                sub.Status = SubmissionStatus.Graded;
                 _context.Update(sub);
                 _context.SaveChanges();
 
                 return new ResponseModelFactory()
-                     .CreateResponseModel<AssignmentDTO>(true,"Updat Grades success", null);
+                     .CreateResponseModel<AssignmentDTO>(true, "Update Grades success", null);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return new ResponseModelFactory()
                      .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
@@ -265,7 +505,7 @@ namespace Assignment__Management_System.Services
                 .ThenInclude(s => s.User)
                 .Where(s => s.AssignmentId == AssignId);
 
-            if (subs != null)
+            if (subs != null && subs.Any())
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<Submission>>(true, "", subs);
             else
@@ -286,7 +526,7 @@ namespace Assignment__Management_System.Services
                     Grade = s.grade,
                 });
 
-            if (studgrades != null)
+            if (studgrades != null && studgrades.Any())
                 return new ResponseModelFactory()
                   .CreateResponseModel<IQueryable<AssignmentStudentGrades>>(true, "", studgrades);
             else
@@ -306,7 +546,7 @@ namespace Assignment__Management_System.Services
                     ImageName = i.ImagePath
                 });
 
-            if (insts != null)
+            if (insts != null && insts.Any())
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<InstructorDTO>>(true, "", insts);
             else
@@ -329,12 +569,28 @@ namespace Assignment__Management_System.Services
                                 InstName = x.instructor.User.Name
                             });
 
-            if (course == null)
+            if (course == null || !course.Any())
                 return new ResponseModelFactory()
                  .CreateResponseModel<IQueryable<CourseDto>>(false, "No Available Courses!", null);
             else
                 return new ResponseModelFactory()
                  .CreateResponseModel<IQueryable<CourseDto>>(true, "", course);
+        }
+
+        public ResponseModel<string> SetFeedback(int submissionId, string Feedback)
+        {
+            var sub = _context.Submissions.FirstOrDefault(s => s.SubId == submissionId);
+
+            if (sub == null)
+                return new ResponseModelFactory()
+                    .CreateResponseModel<string>(false, "Submission Not Found!", null);
+
+            sub.Feedback = Feedback;
+
+            _context.SaveChanges();
+
+            return new ResponseModelFactory()
+                .CreateResponseModel<string>(true, "Feedback submitted successfully!", null);
         }
     }
 }

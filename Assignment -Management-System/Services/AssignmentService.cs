@@ -1,4 +1,4 @@
-﻿using Assignment__Management_System.DataLayer;
+using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.DataLayer.DTOs;
 using Assignment__Management_System.Factories;
 using Assignment__Management_System.Models.Data;
@@ -21,9 +21,11 @@ namespace Assignment__Management_System.Services
             try
             {
                 var assignment = _context.Assignments.FirstOrDefault(a => a.Id == assignmentid);
+                if (assignment == null)
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
 
                 _context.Assignments.Remove(assignment);
-
                 _context.SaveChanges();
 
                 return new ResponseModelFactory()
@@ -35,18 +37,22 @@ namespace Assignment__Management_System.Services
                     .CreateResponseModel<AssignmentDTO>(false, ex.Message, null);
             }
         }
+
         public ResponseModel<IQueryable<AssignmentDTO>> GetAssignments(int CrsId)
         {
             var assignments = _context.Assignments.AsNoTracking()
                 .Include(a => a.course)
-                .Where(a => a.CrsId == CrsId)
+                .Where(a => a.CrsId == CrsId && a.Status != AssignmentStatus.Draft && a.Status != AssignmentStatus.Archived)
                 .Select(x => new AssignmentDTO()
                 {
                     AssignmentId = x.Id,
                     Title = x.Title,
                     DeadLine = x.DeadLine,
                     CrsId = CrsId,
-                    CrsName = x.course.CrsName
+                    CrsName = x.course != null ? x.course.CrsName : "",
+                    Status = x.Status,
+                    PublishedAt = x.PublishedAt,
+                    ClosedAt = x.ClosedAt
                 });
 
             if (assignments.Any())
@@ -56,6 +62,7 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<IQueryable<AssignmentDTO>>(false, "No Assignments For this Course!", null);
         }
+
         public ResponseModel<AssignmentDTO> GetAssignmentById(int assignmentid)
         {
             var assignment = _context.Assignments.AsNoTracking()
@@ -67,7 +74,10 @@ namespace Assignment__Management_System.Services
                     Title = x.Title,
                     DeadLine = x.DeadLine,
                     CrsId = x.CrsId,
-                    CrsName = x.course.CrsName,
+                    CrsName = x.course != null ? x.course.CrsName : "",
+                    Status = x.Status,
+                    PublishedAt = x.PublishedAt,
+                    ClosedAt = x.ClosedAt
                 }).FirstOrDefault();
 
             if (assignment != null)
@@ -77,30 +87,37 @@ namespace Assignment__Management_System.Services
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(false, "Assignment Not Found!", null);
         }
-        public ResponseModel<AssignmentDTO> UpdateAssignment(AssignmentDTO assignment,int id)
+
+        public ResponseModel<AssignmentDTO> UpdateAssignment(AssignmentDTO assignment, int id)
         {
             try
             {
-                var oldAssignment = _context.Assignments.FirstOrDefault(a => a.Id == id);
+                var oldAssignment = _context.Assignments.Include(a => a.course).FirstOrDefault(a => a.Id == id);
+                if (oldAssignment == null)
+                    return new ResponseModelFactory()
+                        .CreateResponseModel<AssignmentDTO>(false, "Assignment not found!", null);
 
                 oldAssignment.Title = assignment.Title;
                 oldAssignment.DeadLine = assignment.DeadLine;
+                if (assignment.Status.HasValue)
+                {
+                    oldAssignment.Status = assignment.Status.Value;
+                }
 
                 _context.Assignments.Update(oldAssignment);
-
                 _context.SaveChanges();
 
-                var assigndto = _context.Assignments
-                    .Include(a => a.course)
-                    .Where(a => a.Id == id)
-                    .Select(x => new AssignmentDTO()
-                    {
-                        AssignmentId = x.Id,
-                        Title = x.Title,
-                        DeadLine = x.DeadLine,
-                        CrsId = x.CrsId,
-                        CrsName = x.course.CrsName
-                    }).FirstOrDefault();
+                var assigndto = new AssignmentDTO()
+                {
+                    AssignmentId = oldAssignment.Id,
+                    Title = oldAssignment.Title,
+                    DeadLine = oldAssignment.DeadLine,
+                    CrsId = oldAssignment.CrsId,
+                    CrsName = oldAssignment.course != null ? oldAssignment.course.CrsName : "",
+                    Status = oldAssignment.Status,
+                    PublishedAt = oldAssignment.PublishedAt,
+                    ClosedAt = oldAssignment.ClosedAt
+                };
 
                 return new ResponseModelFactory()
                     .CreateResponseModel<AssignmentDTO>(true, "Updated Successfully!", assigndto);
