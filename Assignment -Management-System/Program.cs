@@ -12,6 +12,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DotNetEnv;
+using Serilog;
+using Serilog.Events;
 
 
 namespace Assignment__Management_System
@@ -22,6 +24,20 @@ namespace Assignment__Management_System
         {
             Env.TraversePath().Load();
             var builder = WebApplication.CreateBuilder(args);
+
+            var logFilePath = Path.Combine(builder.Environment.ContentRootPath, "App_Data", "Logs", "log-.txt");
+            builder.Host.UseSerilog((_, _, loggerConfiguration) => loggerConfiguration
+                .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File(
+                    logFilePath,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30,
+                    fileSizeLimitBytes: 10 * 1024 * 1024,
+                    rollOnFileSizeLimit: true,
+                    shared: true));
 
             builder.Services.AddControllers();
 
@@ -121,6 +137,8 @@ namespace Assignment__Management_System
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
+            app.UseSerilogRequestLogging();
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

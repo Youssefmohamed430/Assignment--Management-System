@@ -11,6 +11,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Assignment__Management_System.Services
 {
@@ -20,13 +23,16 @@ namespace Assignment__Management_System.Services
         private readonly JWTService _jwtservice ;
         private readonly AppDbContext context;
         private readonly ILogger<AuthService> _logger;
+        private readonly JWT _jwtOptions;
 
-        public AuthService(AppDbContext _context,UserManager<ApplicationUser> _userManager, JWTService jwtservice, ILogger<AuthService> logger)
+        public AuthService(AppDbContext _context, UserManager<ApplicationUser> _userManager, JWTService jwtservice,
+            ILogger<AuthService> logger, Microsoft.Extensions.Options.IOptions<JWT> jwtOptions)
         {
             this.userManager = _userManager;
             this._jwtservice = jwtservice;
             this.context = _context;
             _logger = logger;
+            _jwtOptions = jwtOptions.Value;
         }
 
         public async Task<AuthModel> RegisterUserAsync(UserDto model)
@@ -83,11 +89,8 @@ namespace Assignment__Management_System.Services
                 context.SaveChanges();
             }
 
-            var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
             _logger.LogInformation("User {UserId} registered with role {Role}.", user.Id, model.Role);
-
-            return new AuthModelFactory()
-                .CreateAuthModel(user.Id, model.UserName, model.Email, JWTSecurityToken.ValidTo, new List<string> { model.Role }, new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
+            return await CreateAuthenticatedResponseAsync(user);
         }
         public async Task<AuthModel> LoginAsync(TokenRequestModel model) 
         {
@@ -99,13 +102,109 @@ namespace Assignment__Management_System.Services
                 return new AuthModel() { Message = "User Name or Password is incorrect!"};
             }
             
-            var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
             _logger.LogInformation("User {UserId} logged in successfully.", user.Id);
-
-            return new AuthModelFactory()
-                .CreateAuthModel(user.Id, user.UserName, user.Email, JWTSecurityToken.ValidTo,
-                JWTSecurityToken.Claims.Where(x => x.Type == "roles").Select(x => x.Value).ToList()
-                , new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
+            return await CreateAuthenticatedResponseAsync(user);
         }
+
+        public async Task<AuthModel> RefreshTokenAsync(string rawRefreshToken)
+        {
+            var now = DateTime.UtcNow;
+            var tokenHash = HashRefreshToken(rawRefreshToken);
+            var current = await context.RefreshTokens
+                .Include(token => token.User)
+                .SingleOrDefaultAsync(token => token.TokenHash == tokenHash);
+
+            if (current is null || current.RevokedAt.HasValue || current.ExpiresAt <= now)
+            {
+                _logger.LogWarning("Refresh token request rejected because the token is invalid, expired, or revoked.");
+                return new AuthModel { Message = "Refresh token is invalid or expired." };
+            }
+
+            var nextRawToken = GenerateRefreshToken();
+            var nextHash = HashRefreshToken(nextRawToken);
+            var nextExpiresAt = now.AddDays(Math.Max(1, _jwtOptions.RefreshTokenExpirationDays));
+            current.RevokedAt = now;
+            current.ReplacedByTokenHash = nextHash;
+            context.RefreshTokens.Add(new RefreshToken
+            {
+                UserId = current.UserId,
+                TokenHash = nextHash,
+                CreatedAt = now,
+                ExpiresAt = nextExpiresAt
+            });
+
+            try
+            {
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                _logger.LogWarning("Concurrent refresh token use rejected for user {UserId}.", current.UserId);
+                return new AuthModel { Message = "Refresh token has already been used." };
+            }
+
+            var jwt = await _jwtservice.CreateJwtToken(current.User);
+            var roles = await userManager.GetRolesAsync(current.User);
+            _logger.LogInformation("Access token refreshed for user {UserId}.", current.UserId);
+            return CreateAuthModel(current.User, roles.ToList(), jwt, nextRawToken, nextExpiresAt);
+        }
+
+        public async Task RevokeRefreshTokenAsync(string rawRefreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(rawRefreshToken))
+                return;
+
+            var hash = HashRefreshToken(rawRefreshToken);
+            var token = await context.RefreshTokens.SingleOrDefaultAsync(item => item.TokenHash == hash);
+            if (token is null || token.RevokedAt.HasValue)
+                return;
+
+            token.RevokedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+            _logger.LogInformation("Refresh token revoked for user {UserId}.", token.UserId);
+        }
+
+        public async Task<AuthModel> CreateAuthenticatedResponseAsync(ApplicationUser user)
+        {
+            var now = DateTime.UtcNow;
+            var refreshToken = GenerateRefreshToken();
+            var refreshTokenExpiresOn = now.AddDays(Math.Max(1, _jwtOptions.RefreshTokenExpirationDays));
+            context.RefreshTokens.Add(new RefreshToken
+            {
+                UserId = user.Id,
+                TokenHash = HashRefreshToken(refreshToken),
+                CreatedAt = now,
+                ExpiresAt = refreshTokenExpiresOn
+            });
+            await context.SaveChangesAsync();
+
+            var jwt = await _jwtservice.CreateJwtToken(user);
+            var roles = await userManager.GetRolesAsync(user);
+            return CreateAuthModel(user, roles.ToList(), jwt, refreshToken, refreshTokenExpiresOn);
+        }
+
+        private static AuthModel CreateAuthModel(
+            ApplicationUser user,
+            List<string> roles,
+            JwtSecurityToken jwt,
+            string refreshToken,
+            DateTime refreshTokenExpiresOn)
+        {
+            return new AuthModelFactory().CreateAuthModel(
+                user.Id,
+                user.UserName ?? string.Empty,
+                user.Email ?? string.Empty,
+                jwt.ValidTo,
+                roles,
+                new JwtSecurityTokenHandler().WriteToken(jwt),
+                refreshToken,
+                refreshTokenExpiresOn);
+        }
+
+        private static string GenerateRefreshToken() =>
+            Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(64));
+
+        private static string HashRefreshToken(string token) =>
+            Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
     }
 }

@@ -1,27 +1,21 @@
 ﻿using Assignment__Management_System.DataLayer;
 using Assignment__Management_System.DataLayer.DTOs;
-using Assignment__Management_System.Factories;
-using Assignment__Management_System.Helpers;
-using Assignment__Management_System.Models.Data;
 using Assignment__Management_System.Models.Entities;
 using Microsoft.AspNetCore.Identity;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace Assignment__Management_System.Services
 {
     public class AdminServices : IAdminService
     {
-        private readonly AppDbContext _context;
         private ILogger<AdminServices> _logger;
         private UserManager<ApplicationUser> _userManager;
-        private readonly JWTService _jwtservice;
+        private readonly IAuthService _authService;
 
-        public AdminServices(JWTService jwtservice,AppDbContext context,ILogger<AdminServices> logger, UserManager<ApplicationUser> userManager)
+        public AdminServices(ILogger<AdminServices> logger, UserManager<ApplicationUser> userManager, IAuthService authService)
         {
-            _context = context;
             this._logger = logger;
             this._userManager = userManager;
-            this._jwtservice = jwtservice;
+            _authService = authService;
         }
 
         public async Task<AuthModel> AddAdmin(UserDto model)
@@ -55,10 +49,7 @@ namespace Assignment__Management_System.Services
 
             await _userManager.AddToRoleAsync(user, model.Role);
 
-            var JWTSecurityToken = await _jwtservice.CreateJwtToken(user);
-
-            return new AuthModelFactory()
-                .CreateAuthModel(user.Id, model.UserName, model.Email, JWTSecurityToken.ValidTo, new List<string> { model.Role }, new JwtSecurityTokenHandler().WriteToken(JWTSecurityToken));
+            return await _authService.CreateAuthenticatedResponseAsync(user);
         }
     }
 }

@@ -6,7 +6,8 @@ namespace Assignment__Management_System.Factories
 {
     public class AuthModelFactory
     {
-        public AuthModel CreateAuthModel(string id,string username,string email,DateTime expiresOn,List<string> roles,string JWTSecurityToken )
+        public AuthModel CreateAuthModel(string id, string username, string email, DateTime expiresOn,
+            List<string> roles, string jwtSecurityToken, string refreshToken, DateTime refreshTokenExpiresOn)
         {
             return new AuthModel()
             {
@@ -16,7 +17,9 @@ namespace Assignment__Management_System.Factories
                 IsAuthenticated = true,
                 ExpiresOn = expiresOn,
                 Roles = roles,
-                Token = JWTSecurityToken,
+                Token = jwtSecurityToken,
+                RefreshToken = refreshToken,
+                RefreshTokenExpiresOn = refreshTokenExpiresOn,
             };
         }
     }

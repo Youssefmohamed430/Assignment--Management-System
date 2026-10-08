@@ -31,6 +31,28 @@ namespace Assignment__Management_System.Controllers
 
             return Ok(result);
         }
+
+        [AllowAnonymous]
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshTokenAsync([FromBody] RefreshTokenRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return result.IsAuthenticated ? Ok(result) : Unauthorized(result);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("RevokeToken")]
+        public async Task<IActionResult> RevokeTokenAsync([FromBody] RefreshTokenRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+            return NoContent();
+        }
         [HttpPost("RegisterUser")]
         public async Task<IActionResult> RegisterInstructorAsync(UserDto model)
         {
